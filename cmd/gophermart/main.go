@@ -5,13 +5,12 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/sirupsen/logrus"
-
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config"
+	"github.com/go-chi/chi/v5"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 	if err != nil {
 		logrus.Error("Error setting args: ", err)
 	}
-	logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
+	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
 
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
@@ -32,7 +31,8 @@ func main() {
 	b := handlers.NewArgs(r, wg, ctx)
 	s := &http.Server{
 		Handler: r,
-		Addr:    config.Arg.Address,
+		// Addr:    "127.0.0.1:8080",
+		Addr: config.Arg.Address,
 	}
 	r.Route("/", b.Router)
 

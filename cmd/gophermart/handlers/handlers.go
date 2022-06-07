@@ -40,19 +40,19 @@ func (args *B) Router(r chi.Router) {
 	args.r.Use(middlewarecustom.CheckCookie)
 
 	//регистрация пользователя
-	args.r.Post("/api/user/register", register())
+	r.Post("/api/user/register", register())
 	// аутентификация пользователя
-	args.r.Post("/api/user/login", login())
+	r.Post("/api/user/login", login())
 	// загрузка пользователем номера заказа для расчёта
-	args.r.Post("/api/user/orders", args.loadOrder())
+	r.Post("/api/user/orders", args.loadOrder())
 	// запрос на списание баллов с накопительного счёта в счёт оплаты нового заказа
-	args.r.Post("/api/user/balance/withdraw", withdrawOrder())
+	r.Post("/api/user/balance/withdraw", withdrawOrder())
 	// получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
-	args.r.Get("/api/user/orders", getOrders())
+	r.Get("/api/user/orders", getOrders())
 	// получение текущего баланса счёта баллов лояльности пользователя
-	args.r.Get("/api/user/balance", getBalance())
+	r.Get("/api/user/balance", getBalance())
 	// получение информации о выводе средств с накопительного счёта пользователем
-	args.r.Get("/api/user/balance/withdrawals", withdraw())
+	r.Get("/api/user/balance/withdrawals", withdraw())
 
 }
 
@@ -129,12 +129,15 @@ func login() http.HandlerFunc {
 		switch {
 		case err == nil:
 			logrus.Info("User login: ", u.Login)
+			rw.Header().Add("Content-Type", "application/json")
 			http.SetCookie(rw, &http.Cookie{Name: cookie.Name, Value: cookie.Value, MaxAge: cookie.MaxAge, Expires: cookie.Expires})
 			rw.WriteHeader(http.StatusOK)
 		case err.Error() == err1.Error() || strings.Contains(err.Error(), err2.Error()):
+			rw.Header().Add("Content-Type", "application/json")
 			logrus.Error("Incorrect user or password.")
 			rw.WriteHeader(http.StatusUnauthorized)
 		default:
+			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusInternalServerError)
 		}
 
@@ -178,8 +181,14 @@ func (args *B) loadOrder() http.HandlerFunc {
 			case err == nil:
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
+<<<<<<< HEAD
 				args.wg.Add(1)
 				go sendAccural(args.wg, args.ctx, out)
+=======
+				logrus.Info("ppppppppppppppppppppppp", string(out))
+				// args.wg.Add(1)
+				// go sendAccural(args.wg, args.ctx, out)
+>>>>>>> 1acab1f055881ae01218e51f596d58b7f031f5da
 				logrus.Error(err)
 			case strings.Contains(err.Error(), "orders_number_key"):
 				logrus.Error("Order already exist and add other user")
