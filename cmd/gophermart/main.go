@@ -17,10 +17,10 @@ import (
 func main() {
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
-	err := config.TerminateFlags()
-	if err != nil {
-		logrus.Error("Error setting args: ", err)
-	}
+	// err := config.TerminateFlags()
+	// if err != nil {
+	// 	logrus.Error("Error setting args: ", err)
+	// }
 	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
 
 	storage.IDB = &storage.DB
@@ -52,7 +52,6 @@ func main() {
 	wg.Wait()
 }
 func Router(r chi.Router) {
-
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
