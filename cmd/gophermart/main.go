@@ -9,16 +9,31 @@ import (
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/config"
 	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
+	lokihook "github.com/akkuman/logrus-loki-hook"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	lokiHookConfig := &lokihook.Config{
+		URL: "https://logsremoteloki:efnd9DG510YnZQUjMlgMYVIN@loki.duduh.ru/api/prom/push",
+		Labels: map[string]string{
+			"app": "lexa-gophermart",
+		},
+	}
+	hook, err := lokihook.NewHook(lokiHookConfig)
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		logrus.AddHook(hook)
+	}
+
+	//
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	err := config.TerminateFlags()
+	err = config.TerminateFlags()
 	if err != nil {
 		logrus.Error("Error setting args: ", err)
 	}
