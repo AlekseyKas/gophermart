@@ -7,7 +7,6 @@ import (
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config"
 	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
 	"github.com/go-chi/chi/middleware"
