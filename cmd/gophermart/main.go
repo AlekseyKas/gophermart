@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/helpers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config"
@@ -24,17 +25,17 @@ func main() {
 
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
-	wg.Add(2)
+	wg.Add(3)
 	go app.WaitSignals(cancel, wg)
 
 	r := chi.NewRouter()
-	b := handlers.NewArgs(r, wg, ctx)
+	// b := handlers.NewArgs(r, wg, ctx)
 	s := &http.Server{
 		Handler: r,
-		// Addr:    "127.0.0.1:8080",
-		Addr: config.Arg.Address,
+		Addr:    config.Arg.Address,
 	}
-	r.Route("/", b.Router)
+	r.Route("/", handlers.Router)
+	go helpers.ControlStatus(wg, ctx)
 
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
@@ -43,9 +44,11 @@ func main() {
 			logrus.Error(err)
 		}
 	}(wg)
-
 	<-ctx.Done()
+
 	s.Shutdown(ctx)
+
 	logrus.Info("Stop http server!")
 	wg.Wait()
+
 }

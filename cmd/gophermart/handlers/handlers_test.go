@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"sync"
 	"testing"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
@@ -84,11 +83,11 @@ func Test_register(t *testing.T) {
 			},
 		},
 	}
-	wg := &sync.WaitGroup{}
+	// wg := &sync.WaitGroup{}
 	ctx := context.Background()
 	r := chi.NewRouter()
-	b := handlers.NewArgs(r, wg, ctx)
-	r.Route("/", b.Router)
+	// b := handlers.NewArgs(r, wg, ctx)
+	r.Route("/", handlers.Router)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -177,12 +176,12 @@ func Test_login(t *testing.T) {
 			},
 		},
 	}
-	wg := &sync.WaitGroup{}
+	// wg := &sync.WaitGroup{}
 	ctx := context.Background()
 
 	r := chi.NewRouter()
-	b := handlers.NewArgs(r, wg, ctx)
-	r.Route("/", b.Router)
+	// b := handlers.NewArgs(r, wg, ctx)
+	r.Route("/", handlers.Router)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -240,6 +239,11 @@ func Test_loadOrder(t *testing.T) {
 		Password: "password",
 	}
 
+	User3 := storage.User{
+		Login:    "user3",
+		Password: "password",
+	}
+
 	type want struct {
 		contentType string
 		statusCode  int
@@ -253,6 +257,16 @@ func Test_loadOrder(t *testing.T) {
 		want        want
 	}{
 		// TODO: Add test cases.
+		{
+			name:        "wrong format req",
+			method:      "GET",
+			url:         "/api/user/orders",
+			contentType: "application/json",
+			want: want{
+				contentType: "text/plain",
+				statusCode:  204,
+			},
+		},
 		{
 			name:        "success registred",
 			body:        []byte("12345678903"),
@@ -297,12 +311,22 @@ func Test_loadOrder(t *testing.T) {
 				statusCode:  400,
 			},
 		},
+		{
+			name:        "wrong format req",
+			method:      "GET",
+			url:         "/api/user/orders",
+			contentType: "application/json",
+			want: want{
+				contentType: "text/plain",
+				statusCode:  200,
+			},
+		},
 	}
 	r := chi.NewRouter()
 	ctx := context.Background()
-	wg := &sync.WaitGroup{}
-	b := handlers.NewArgs(r, wg, ctx)
-	r.Route("/", b.Router)
+	// wg := &sync.WaitGroup{}
+	// b := handlers.NewArgs(r, wg, ctx)
+	r.Route("/", handlers.Router)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -319,6 +343,8 @@ func Test_loadOrder(t *testing.T) {
 	storage.IDB.InitDB(ctx, DBURL)
 	//first user
 	cookie, _ := storage.DB.CreateUser(User)
+	cookie2, _ := storage.DB.CreateUser(User2)
+	cookie3, _ := storage.DB.CreateUser(User3)
 
 	testaccrualrequests(t, "http://0.0.0.0:8090")
 
@@ -345,7 +371,6 @@ func Test_loadOrder(t *testing.T) {
 
 	//409
 	// //second user
-	cookie2, _ := storage.DB.CreateUser(User2)
 	body := []byte("12345678903")
 	buff := bytes.NewBuffer(body)
 	req, err := http.NewRequest("POST", ts.URL+"/api/user/orders", buff)
@@ -359,6 +384,17 @@ func Test_loadOrder(t *testing.T) {
 	res, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, 409, res.StatusCode)
+	defer res.Body.Close()
+
+	//after stop DB 401
+	body = []byte("12345678903")
+	buff = bytes.NewBuffer(body)
+	req, err = http.NewRequest("POST", ts.URL+"/api/user/orders", buff)
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "text/plain")
+	res, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, 401, res.StatusCode)
 	defer res.Body.Close()
 	//stop DB
 	helpers.StopDB(id)
@@ -374,6 +410,20 @@ func Test_loadOrder(t *testing.T) {
 	}
 	req.AddCookie(cookieReq)
 	req.Header.Set("Content-Type", "text/plain")
+	res, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, 500, res.StatusCode)
+	defer res.Body.Close()
+
+	//after stop DB 500 GET
+	req, err = http.NewRequest("GET", ts.URL+"/api/user/orders", nil)
+	require.NoError(t, err)
+	cookieReq = &http.Cookie{
+		Name:  cookie3.Name,
+		Value: cookie3.Value,
+	}
+	req.AddCookie(cookieReq)
+	req.Header.Set("Content-Type", "application/json")
 	res, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, 500, res.StatusCode)
