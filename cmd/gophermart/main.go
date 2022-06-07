@@ -43,7 +43,7 @@ func main() {
 	// 	}
 	// }(wg)
 
-	http.ListenAndServe(config.Arg.Address, r)
+	http.ListenAndServe("127.0.0.1:8080", r)
 	// <-ctx.Done()
 	// s.Shutdown(ctx)
 	// logrus.Info("Stop http server!")
