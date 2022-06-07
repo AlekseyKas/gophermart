@@ -31,20 +31,20 @@ type B struct {
 func NewArgs(r chi.Router, wg *sync.WaitGroup, ctx context.Context) *B {
 	return &B{r: r, wg: wg, ctx: ctx}
 }
-func Router(r chi.Router) {
+func (args *B) Router(r chi.Router) {
 
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middlewarecustom.CheckCookie)
+	args.r.Use(middleware.RequestID)
+	args.r.Use(middleware.RealIP)
+	args.r.Use(middleware.Logger)
+	args.r.Use(middleware.Recoverer)
+	args.r.Use(middlewarecustom.CheckCookie)
 
 	//регистрация пользователя
 	r.Post("/api/user/register", register())
 	// аутентификация пользователя
 	r.Post("/api/user/login", login())
 	// загрузка пользователем номера заказа для расчёта
-	r.Post("/api/user/orders", loadOrder())
+	r.Post("/api/user/orders", args.loadOrder())
 	// запрос на списание баллов с накопительного счёта в счёт оплаты нового заказа
 	r.Post("/api/user/balance/withdraw", withdrawOrder())
 	// получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
@@ -129,19 +129,22 @@ func login() http.HandlerFunc {
 		switch {
 		case err == nil:
 			logrus.Info("User login: ", u.Login)
+			rw.Header().Add("Content-Type", "application/json")
 			http.SetCookie(rw, &http.Cookie{Name: cookie.Name, Value: cookie.Value, MaxAge: cookie.MaxAge, Expires: cookie.Expires})
 			rw.WriteHeader(http.StatusOK)
 		case err.Error() == err1.Error() || strings.Contains(err.Error(), err2.Error()):
+			rw.Header().Add("Content-Type", "application/json")
 			logrus.Error("Incorrect user or password.")
 			rw.WriteHeader(http.StatusUnauthorized)
 		default:
+			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusInternalServerError)
 		}
 
 	}
 }
 
-func loadOrder() http.HandlerFunc {
+func (args *B) loadOrder() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 		logrus.Info("conetneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", req.Header.Get("Content-Type"))
