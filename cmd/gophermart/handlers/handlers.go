@@ -31,28 +31,28 @@ type B struct {
 func NewArgs(r chi.Router, wg *sync.WaitGroup, ctx context.Context) *B {
 	return &B{r: r, wg: wg, ctx: ctx}
 }
-func (args *B) Router(r chi.Router) {
+func Router(r chi.Router) {
 
-	args.r.Use(middleware.RequestID)
-	args.r.Use(middleware.RealIP)
-	args.r.Use(middleware.Logger)
-	args.r.Use(middleware.Recoverer)
-	args.r.Use(middlewarecustom.CheckCookie)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middlewarecustom.CheckCookie)
 
 	//регистрация пользователя
-	args.r.Post("/api/user/register", register())
+	r.Post("/api/user/register", register())
 	// аутентификация пользователя
-	args.r.Post("/api/user/login", login())
+	r.Post("/api/user/login", login())
 	// загрузка пользователем номера заказа для расчёта
-	args.r.Post("/api/user/orders", args.loadOrder())
+	r.Post("/api/user/orders", loadOrder())
 	// запрос на списание баллов с накопительного счёта в счёт оплаты нового заказа
-	args.r.Post("/api/user/balance/withdraw", withdrawOrder())
+	r.Post("/api/user/balance/withdraw", withdrawOrder())
 	// получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
-	args.r.Get("/api/user/orders", getOrders())
+	r.Get("/api/user/orders", getOrders())
 	// получение текущего баланса счёта баллов лояльности пользователя
-	args.r.Get("/api/user/balance", getBalance())
+	r.Get("/api/user/balance", getBalance())
 	// получение информации о выводе средств с накопительного счёта пользователем
-	args.r.Get("/api/user/balance/withdrawals", withdraw())
+	r.Get("/api/user/balance/withdrawals", withdraw())
 
 }
 
@@ -141,7 +141,7 @@ func login() http.HandlerFunc {
 	}
 }
 
-func (args *B) loadOrder() http.HandlerFunc {
+func loadOrder() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 		logrus.Info("conetneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", req.Header.Get("Content-Type"))
@@ -180,8 +180,8 @@ func (args *B) loadOrder() http.HandlerFunc {
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
 				logrus.Info("ppppppppppppppppppppppp", string(out))
-				args.wg.Add(1)
-				go sendAccural(args.wg, args.ctx, out)
+				// args.wg.Add(1)
+				// go sendAccural(args.wg, args.ctx, out)
 				logrus.Error(err)
 			case strings.Contains(err.Error(), "orders_number_key"):
 				logrus.Error("Order already exist and add other user")
