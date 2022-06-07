@@ -40,19 +40,19 @@ func (args *B) Router(r chi.Router) {
 	args.r.Use(middlewarecustom.CheckCookie)
 
 	//регистрация пользователя
-	r.Post("/api/user/register", register())
+	args.r.Post("/api/user/register", register())
 	// аутентификация пользователя
-	r.Post("/api/user/login", login())
+	args.r.Post("/api/user/login", login())
 	// загрузка пользователем номера заказа для расчёта
-	r.Post("/api/user/orders", args.loadOrder())
+	args.r.Post("/api/user/orders", args.loadOrder())
 	// запрос на списание баллов с накопительного счёта в счёт оплаты нового заказа
-	r.Post("/api/user/balance/withdraw", withdrawOrder())
+	args.r.Post("/api/user/balance/withdraw", withdrawOrder())
 	// получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
-	r.Get("/api/user/orders", getOrders())
+	args.r.Get("/api/user/orders", getOrders())
 	// получение текущего баланса счёта баллов лояльности пользователя
-	r.Get("/api/user/balance", getBalance())
+	args.r.Get("/api/user/balance", getBalance())
 	// получение информации о выводе средств с накопительного счёта пользователем
-	r.Get("/api/user/balance/withdrawals", withdraw())
+	args.r.Get("/api/user/balance/withdrawals", withdraw())
 
 }
 
@@ -119,6 +119,7 @@ func login() http.HandlerFunc {
 			rw.WriteHeader(http.StatusBadRequest)
 		}
 
+		err := storage.DB.LoadOrder(string(out
 		if u.Login == "" || u.Password == "" {
 			logrus.Error("Wrong format of user or password.")
 			rw.WriteHeader(http.StatusBadRequest)
@@ -181,14 +182,8 @@ func (args *B) loadOrder() http.HandlerFunc {
 			case err == nil:
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
-<<<<<<< HEAD
 				args.wg.Add(1)
 				go sendAccural(args.wg, args.ctx, out)
-=======
-				logrus.Info("ppppppppppppppppppppppp", string(out))
-				// args.wg.Add(1)
-				// go sendAccural(args.wg, args.ctx, out)
->>>>>>> 1acab1f055881ae01218e51f596d58b7f031f5da
 				logrus.Error(err)
 			case strings.Contains(err.Error(), "orders_number_key"):
 				logrus.Error("Order already exist and add other user")
