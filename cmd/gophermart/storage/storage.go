@@ -18,9 +18,12 @@ import (
 )
 
 type Order struct {
-	Order   string
-	Status  string
-	Accrual float64
+	OrderID     int
+	UserID      int       `json:"userID,omitempty"`
+	Order       string    `json:"order,omitempty"`
+	Status      string    `json:"status,omitempty"`
+	Accrual     float64   `json:"accrual,omitempty"`
+	Uploaded_at time.Time `json:"uploaded_at,omitempty"`
 }
 
 type Cookie struct {
@@ -44,6 +47,14 @@ type Database struct {
 	Ctx   context.Context
 }
 
+// type Order struct {
+// 	userID      int
+// 	number      string
+// 	status      string
+// 	accrual     float64
+// 	uploaded_at time.Time
+// }
+
 var DB Database
 var IDB Storage
 var Users User
@@ -58,20 +69,38 @@ type Storage interface {
 	// ReconnectDB() error
 	LoadOrder(number string, c Cookie) error
 	UpdateOrder(order Order) error
+	GetOrders() (Ords []Order, err error)
 }
 
-// CREATE TABLE orders (
-//   order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-//   user_id INT,
-//   UNIQUE (user_id, number),
-//   number VARCHAR ( 50 ) UNIQUE NOT NULL,
-//   status VARCHAR (50) NOT NULL DEFAULT 'NEW',
-//   accrual DOUBLE PRECISION DEFAULT 0,
-//   uploaded_at TIMESTAMPTZ,
-//   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-// );
+// order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+// user_id INT,
+// UNIQUE (user_id, number),
+// number VARCHAR ( 50 ) UNIQUE NOT NULL,
+// status VARCHAR (50) NOT NULL DEFAULT 'NEW',
+// accrual DOUBLE PRECISION DEFAULT 0,
+// uploaded_at TIMESTAMPTZ,
+func (d *Database) GetOrders() (Ords []Order, err error) {
+	// var userID int
+	// var number string
+	// var status string
+	// var accrual float64
+	// var uploaded_at time.Time
+
+	var order Order
+	rows, err := d.Con.Query(d.Ctx, "SELECT * FROM orders order by uploaded_at")
+	if err != nil {
+		logrus.Error("Error select orders: ", err)
+	}
+	for rows.Next() {
+		err = rows.Scan(&order.OrderID, &order.UserID, &order.Order, &order.Status, &order.Accrual, &order.Uploaded_at)
+		if err != nil {
+			logrus.Error("Error scan orders: ", err)
+		}
+		Ords = append(Ords, order)
+	}
+	return Ords, err
+}
 func (d *Database) UpdateOrder(order Order) error {
-	logrus.Info("[[[[[[[[[[[", order)
 	_, err := d.Con.Exec(d.Ctx, "UPDATE orders SET status = $1, accrual = $2 WHERE number = $3;", order.Status, order.Accrual, order.Order)
 	if err != nil {
 		logrus.Error("Error update accrual: ", err)

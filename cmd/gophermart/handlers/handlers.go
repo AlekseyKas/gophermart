@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,12 +9,9 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/config"
 	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
-	"github.com/go-resty/resty/v2"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
@@ -31,28 +29,28 @@ type B struct {
 func NewArgs(r chi.Router, wg *sync.WaitGroup, ctx context.Context) *B {
 	return &B{r: r, wg: wg, ctx: ctx}
 }
-func (args *B) Router(r chi.Router) {
+func Router(r chi.Router) {
 
-	args.r.Use(middleware.RequestID)
-	args.r.Use(middleware.RealIP)
-	args.r.Use(middleware.Logger)
-	args.r.Use(middleware.Recoverer)
-	args.r.Use(middlewarecustom.CheckCookie)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middlewarecustom.CheckCookie)
 
 	//регистрация пользователя
-	args.r.Post("/api/user/register", register())
+	r.Post("/api/user/register", register())
 	// аутентификация пользователя
-	args.r.Post("/api/user/login", login())
+	r.Post("/api/user/login", login())
 	// загрузка пользователем номера заказа для расчёта
-	args.r.Post("/api/user/orders", args.loadOrder())
+	r.Post("/api/user/orders", loadOrder())
 	// запрос на списание баллов с накопительного счёта в счёт оплаты нового заказа
-	args.r.Post("/api/user/balance/withdraw", withdrawOrder())
+	r.Post("/api/user/balance/withdraw", withdrawOrder())
 	// получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
-	args.r.Get("/api/user/orders", getOrders())
+	r.Get("/api/user/orders", getOrders())
 	// получение текущего баланса счёта баллов лояльности пользователя
-	args.r.Get("/api/user/balance", getBalance())
+	r.Get("/api/user/balance", getBalance())
 	// получение информации о выводе средств с накопительного счёта пользователем
-	args.r.Get("/api/user/balance/withdrawals", withdraw())
+	r.Get("/api/user/balance/withdrawals", withdraw())
 
 }
 
@@ -141,7 +139,7 @@ func login() http.HandlerFunc {
 	}
 }
 
-func (args *B) loadOrder() http.HandlerFunc {
+func loadOrder() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
 		if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
@@ -178,8 +176,8 @@ func (args *B) loadOrder() http.HandlerFunc {
 			case err == nil:
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
-				args.wg.Add(1)
-				go sendAccural(args.wg, args.ctx, out)
+				// args.wg.Add(1)
+				// go sendAccural(args.wg, args.ctx, out)
 				logrus.Error(err)
 			case strings.Contains(err.Error(), "orders_number_key"):
 				logrus.Error("Order already exist and add other user")
@@ -190,52 +188,6 @@ func (args *B) loadOrder() http.HandlerFunc {
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
 			// rw.WriteHeader(http.StatusOK)
-		}
-	}
-}
-
-func sendAccural(wg *sync.WaitGroup, ctx context.Context, number []byte) {
-	//for test
-	// client := resty.New()
-	// _, err := client.R().
-	// 	SetHeader("Content-Type", "application/json").
-	// 	SetBody(number).
-	// 	Post("http://" + config.Arg.SystemAddress + "/api/orders")
-	// if err != nil {
-	// 	logrus.Error(err)
-	// }
-	//for test
-	client := resty.New()
-	var status string
-	for {
-		select {
-		case <-ctx.Done():
-			logrus.Info("Check status down")
-			wg.Done()
-			return
-		case <-time.After(time.Second * 2):
-			defer wg.Done()
-			resp, err := client.R().
-				SetHeader("Content-Type", "application/json").
-				Get("http://" + config.Arg.SystemAddress + "/api/orders/" + string(number))
-			if err != nil {
-				logrus.Error(err)
-			}
-			order := storage.Orders
-			err = json.Unmarshal(resp.Body(), &order)
-			if err != nil {
-				logrus.Error("Error unmarshal order from accrual: ", err)
-			}
-			if order.Status != status {
-				err = storage.DB.UpdateOrder(order)
-				if err != nil {
-					logrus.Error("Error update order in DB: ", err)
-				}
-				status = order.Status
-				if status == "INVALID" || status == "PROCESSED" {
-					return
-				}
-			}
 		}
 	}
 }
@@ -253,7 +205,25 @@ func withdraw() http.HandlerFunc {
 }
 func getOrders() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
+		orders, err := storage.DB.GetOrders()
+		if err != nil {
+			logrus.Error(err)
+		}
+		rw.Header().Add("Content-Type", "application/json")
+		if len(orders) == 0 {
+			rw.WriteHeader(http.StatusNoContent)
+		} else {
+			rw.WriteHeader(http.StatusOK)
 
+			var buf bytes.Buffer
+			encoder := json.NewEncoder(&buf)
+			err := encoder.Encode(orders)
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusBadRequest)
+			}
+			rw.Write(buf.Bytes())
+		}
+		logrus.Info("oOOOOOOOOOOOOOOOOOOOO", orders)
 	}
 }
 

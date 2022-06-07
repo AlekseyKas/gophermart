@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"sync"
 	"testing"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
@@ -84,11 +83,11 @@ func Test_register(t *testing.T) {
 			},
 		},
 	}
-	wg := &sync.WaitGroup{}
+	// wg := &sync.WaitGroup{}
 	ctx := context.Background()
 	r := chi.NewRouter()
-	b := handlers.NewArgs(r, wg, ctx)
-	r.Route("/", b.Router)
+	// b := handlers.NewArgs(r, wg, ctx)
+	r.Route("/", handlers.Router)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -177,12 +176,12 @@ func Test_login(t *testing.T) {
 			},
 		},
 	}
-	wg := &sync.WaitGroup{}
+	// wg := &sync.WaitGroup{}
 	ctx := context.Background()
 
 	r := chi.NewRouter()
-	b := handlers.NewArgs(r, wg, ctx)
-	r.Route("/", b.Router)
+	// b := handlers.NewArgs(r, wg, ctx)
+	r.Route("/", handlers.Router)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
@@ -300,9 +299,9 @@ func Test_loadOrder(t *testing.T) {
 	}
 	r := chi.NewRouter()
 	ctx := context.Background()
-	wg := &sync.WaitGroup{}
-	b := handlers.NewArgs(r, wg, ctx)
-	r.Route("/", b.Router)
+	// wg := &sync.WaitGroup{}
+	// b := handlers.NewArgs(r, wg, ctx)
+	r.Route("/", handlers.Router)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
