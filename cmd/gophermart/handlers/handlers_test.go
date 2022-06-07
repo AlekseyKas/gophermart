@@ -324,8 +324,7 @@ func Test_loadOrder(t *testing.T) {
 	}
 	r := chi.NewRouter()
 	ctx := context.Background()
-	// wg := &sync.WaitGroup{}
-	// b := handlers.NewArgs(r, wg, ctx)
+
 	r.Route("/", handlers.Router)
 	ts := httptest.NewServer(r)
 	defer ts.Close()

@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"os"
 
 	"github.com/caarlos0/env"
 	"github.com/sirupsen/logrus"
@@ -42,18 +43,20 @@ func TerminateFlags() (err error) {
 	flag.Parse()
 	logrus.Info("[[[[[[[[[[[[[[[", env)
 	logrus.Info("5555555555555555555555555555[[[[[[[[[[[[[[[", &Flags)
-
-	if env.Address == "" {
+	envAddress, _ := os.LookupEnv("RUN_ADDRESS")
+	if envAddress == "" {
 		Arg.Address = Flags.Address
 	} else {
 		Arg.Address = env.Address
 	}
-	if env.DatabaseURL == "" {
+	envURI, _ := os.LookupEnv("DATABASE_URI")
+	if envURI == "" {
 		Arg.DatabaseURL = Flags.DatabaseURL
 	} else {
 		Arg.DatabaseURL = env.DatabaseURL
 	}
-	if env.SystemAddress == "" {
+	envSystemAddress, _ := os.LookupEnv("ACCRUAL_SYSTEM_ADDRESS")
+	if envSystemAddress == "" {
 		Arg.SystemAddress = Flags.SystemAddress
 	} else {
 		Arg.SystemAddress = env.SystemAddress
