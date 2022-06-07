@@ -25,7 +25,7 @@ func main() {
 
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
-	wg.Add(2)
+	wg.Add(1)
 	go app.WaitSignals(cancel, wg)
 
 	r := chi.NewRouter()
@@ -37,14 +37,15 @@ func main() {
 	}
 	r.Route("/", Router)
 
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		err := s.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			logrus.Error(err)
-		}
-	}(wg)
-
+	// go func(wg *sync.WaitGroup) {
+	// 	defer wg.Done()
+	// 	err := s.ListenAndServe()
+	// 	if err != nil && err != http.ErrServerClosed {
+	// 		logrus.Error(err)
+	// 	}
+	// }(wg)
+	// wg.Add(1)
+	go s.ListenAndServe()
 	<-ctx.Done()
 	s.Shutdown(ctx)
 	logrus.Info("Stop http server!")
