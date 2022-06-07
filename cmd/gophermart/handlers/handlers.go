@@ -223,7 +223,6 @@ func getOrders() http.HandlerFunc {
 			}
 			rw.Write(buf.Bytes())
 		}
-		logrus.Info("oOOOOOOOOOOOOOOOOOOOO", orders)
 	}
 }
 

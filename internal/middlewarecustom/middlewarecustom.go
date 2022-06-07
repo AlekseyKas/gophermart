@@ -27,7 +27,7 @@ func CheckCookie(next http.Handler) http.Handler {
 			switch {
 			case err == nil:
 				logrus.Info("Get cookie without err")
-			case strings.Contains(err.Error(), "unexpected EOF"):
+			case strings.Contains(err.Error(), "unexpected EOF") || strings.Contains(err.Error(), "failed to connect to"):
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
 
@@ -46,7 +46,7 @@ func CheckCookie(next http.Handler) http.Handler {
 				if req.URL.Path == "/api/user/register" || req.URL.Path == "/api/user/login" {
 					next.ServeHTTP(rw, req)
 				} else {
-					logrus.Info("111111111111111: ", b)
+					logrus.Info("111111111111111aaaaaaaaaaa: ", b)
 					rw.WriteHeader(http.StatusUnauthorized)
 					return
 				}
@@ -55,7 +55,7 @@ func CheckCookie(next http.Handler) http.Handler {
 			if req.URL.Path == "/api/user/register" || req.URL.Path == "/api/user/login" {
 				next.ServeHTTP(rw, req)
 			} else {
-				logrus.Info("111111111111111")
+				logrus.Info("111111111111111bbbbbbbbbb")
 				rw.WriteHeader(http.StatusUnauthorized)
 				return
 			}
