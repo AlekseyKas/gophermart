@@ -148,7 +148,7 @@ func (args *B) loadOrder() http.HandlerFunc {
 			rw.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		rw.Header().Add("Content-Type", "application/json")
+		rw.Header().Add("Content-Type", "text/plain")
 		var c storage.Cookie
 		for _, cook := range req.Cookies() {
 			if cook.Name == "gophermart" {
