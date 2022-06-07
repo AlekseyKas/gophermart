@@ -46,7 +46,7 @@ func main() {
 	// }(wg)
 	// wg.Add(1)
 	go http.ListenAndServe("127.0.0.1:8080", r)
-	<-ctx.Done()
+	// <-ctx.Done()
 	// s.Shutdown(ctx)
 	logrus.Info("Stop http server!")
 	wg.Wait()
