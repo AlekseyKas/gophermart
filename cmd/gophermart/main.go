@@ -28,16 +28,16 @@ func main() {
 	} else {
 		logrus.AddHook(hook)
 	}
+	err = config.TerminateFlags()
+	if err != nil {
+		logrus.Error("Error setting args: ", err)
+	}
 
 	logrus.Info(">>>>>>>>>>>>>", config.Arg.DatabaseURL, "<<<<<<<<<<<<<<<<<<<<<<")
 	//
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	err = config.TerminateFlags()
-	if err != nil {
-		logrus.Error("Error setting args: ", err)
-	}
 
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
