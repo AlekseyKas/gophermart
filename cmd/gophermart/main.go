@@ -31,8 +31,8 @@ func main() {
 	b := handlers.NewArgs(r, wg, ctx)
 	s := &http.Server{
 		Handler: r,
-		Addr:    "127.0.0.1:8080",
-		// Addr:    config.Arg.Address,
+		// Addr:    "127.0.0.1:8080",
+		Addr: config.Arg.Address,
 	}
 	r.Route("/", b.Router)
 
