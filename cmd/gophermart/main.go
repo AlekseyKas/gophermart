@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/config"
 	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
 	"github.com/go-chi/chi/middleware"
@@ -18,14 +17,14 @@ func main() {
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// err := config.TerminateFlags()
-	// if err != nil {
-	// 	logrus.Error("Error setting args: ", err)
-	// }
+	err := config.TerminateFlags()
+	if err != nil {
+		logrus.Error("Error setting args: ", err)
+	}
 	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
 
-	storage.IDB = &storage.DB
-	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
+	// storage.IDB = &storage.DB
+	// storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
 	// wg.Add(1)
 	// go app.WaitSignals(cancel, wg)
 
