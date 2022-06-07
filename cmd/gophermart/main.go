@@ -18,10 +18,10 @@ func main() {
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	err := config.TerminateFlags()
-	if err != nil {
-		logrus.Error("Error setting args: ", err)
-	}
+	// err := config.TerminateFlags()
+	// if err != nil {
+	// 	logrus.Error("Error setting args: ", err)
+	// }
 	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
 
 	storage.IDB = &storage.DB
