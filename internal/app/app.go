@@ -18,8 +18,8 @@ func WaitSignals(cancel context.CancelFunc, wg *sync.WaitGroup) {
 		sig := <-terminate
 		switch sig {
 		case os.Interrupt:
+			defer wg.Done()
 			cancel()
-			wg.Done()
 			logrus.Info("Terminate signal OS!")
 			return
 		}
