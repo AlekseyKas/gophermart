@@ -49,9 +49,20 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 					if err != nil {
 						logrus.Error("Error unmarshal order from accrual: ", err)
 					}
-					_, err = storage.DB.Con.Exec(storage.DB.Ctx, "UPDATE orders SET status = $1 WHERE number = $2;", order.Status, order.Order)
-					if err != nil {
-						logrus.Error("Error update accrual: ", err)
+					logrus.Info(">>>>>>>>>>>>>>>>", Ords[i], order)
+					//update status &accrual
+					if Ords[i].Status != order.Status {
+						_, err = storage.DB.Con.Exec(storage.DB.Ctx, "UPDATE orders SET status = $1, accrual = $2  WHERE number = $3;", order.Status, order.Accrual, order.Order)
+						if err != nil {
+							logrus.Error("Error update accrual: ", err)
+						}
+					}
+					//update balance
+					if order.Status == "INVALID" || order.Status == "PROCESSED" {
+						_, err := storage.DB.Con.Exec(storage.DB.Ctx, "INSERT INTO balance (user_id, balance) VALUES($1,$2)", Ords[i].UserID, order.Accrual)
+						if err != nil {
+							logrus.Error("Error update balance: ", err)
+						}
 					}
 
 				}
