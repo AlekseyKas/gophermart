@@ -29,6 +29,7 @@ func main() {
 		logrus.AddHook(hook)
 	}
 
+	logrus.Info(">>>>>>>>>>>>>", config.Arg.DatabaseURL, "<<<<<<<<<<<<<<<<<<<<<<")
 	//
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -37,7 +38,6 @@ func main() {
 	if err != nil {
 		logrus.Error("Error setting args: ", err)
 	}
-	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
 
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
