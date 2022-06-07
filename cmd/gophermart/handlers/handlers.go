@@ -196,15 +196,16 @@ func (args *B) loadOrder() http.HandlerFunc {
 
 func sendAccural(wg *sync.WaitGroup, ctx context.Context, number []byte) {
 	//for test
-	client := resty.New()
-	_, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(number).
-		Post("http://" + config.Arg.SystemAddress + "/api/orders")
-	if err != nil {
-		logrus.Error(err)
-	}
+	// client := resty.New()
+	// _, err := client.R().
+	// 	SetHeader("Content-Type", "application/json").
+	// 	SetBody(number).
+	// 	Post("http://" + config.Arg.SystemAddress + "/api/orders")
+	// if err != nil {
+	// 	logrus.Error(err)
+	// }
 	//for test
+	client := resty.New()
 	var status string
 	for {
 		select {
@@ -225,10 +226,6 @@ func sendAccural(wg *sync.WaitGroup, ctx context.Context, number []byte) {
 			if err != nil {
 				logrus.Error("Error unmarshal order from accrual: ", err)
 			}
-			// var order Order
-			// body := client.R().Body
-			logrus.Info("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ", "url: ", config.Arg.SystemAddress, string(resp.Body()), "body", order)
-			// err = json.Unmarshal(out, &order)
 			if order.Status != status {
 				err = storage.DB.UpdateOrder(order)
 				if err != nil {
@@ -236,7 +233,6 @@ func sendAccural(wg *sync.WaitGroup, ctx context.Context, number []byte) {
 				}
 				status = order.Status
 				if status == "INVALID" || status == "PROCESSED" {
-					logrus.Info("ppppppppppppppaaaaaaaaaaaaaaaaaaaaaaa")
 					return
 				}
 			}
