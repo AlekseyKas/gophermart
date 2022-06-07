@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/config"
 	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
@@ -34,7 +33,7 @@ func main() {
 	// 	// Addr:    "127.0.0.1:8080",
 	// 	Addr: config.Arg.Address,
 	// }
-	r.Route("/", handlers.Router)
+	r.Route("/", Router)
 	// wg.Add(1)
 	// go func(wg *sync.WaitGroup) {
 	// 	defer wg.Done()
