@@ -119,7 +119,6 @@ func login() http.HandlerFunc {
 			rw.WriteHeader(http.StatusBadRequest)
 		}
 
-		err := storage.DB.LoadOrder(string(out
 		if u.Login == "" || u.Password == "" {
 			logrus.Error("Wrong format of user or password.")
 			rw.WriteHeader(http.StatusBadRequest)
@@ -130,15 +129,12 @@ func login() http.HandlerFunc {
 		switch {
 		case err == nil:
 			logrus.Info("User login: ", u.Login)
-			rw.Header().Add("Content-Type", "application/json")
 			http.SetCookie(rw, &http.Cookie{Name: cookie.Name, Value: cookie.Value, MaxAge: cookie.MaxAge, Expires: cookie.Expires})
 			rw.WriteHeader(http.StatusOK)
 		case err.Error() == err1.Error() || strings.Contains(err.Error(), err2.Error()):
-			rw.Header().Add("Content-Type", "application/json")
 			logrus.Error("Incorrect user or password.")
 			rw.WriteHeader(http.StatusUnauthorized)
 		default:
-			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusInternalServerError)
 		}
 
@@ -193,8 +189,7 @@ func (args *B) loadOrder() http.HandlerFunc {
 			default:
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
-
-			rw.WriteHeader(http.StatusOK)
+			// rw.WriteHeader(http.StatusOK)
 		}
 	}
 }
