@@ -18,12 +18,12 @@ import (
 )
 
 type Order struct {
-	OrderID     int
-	UserID      int       `json:"userID,omitempty"`
-	Order       string    `json:"order,omitempty"`
-	Status      string    `json:"status,omitempty"`
-	Accrual     float64   `json:"accrual,omitempty"`
-	Uploaded_at time.Time `json:"uploaded_at,omitempty"`
+	OrderID    int
+	UserID     int       `json:"userID,omitempty"`
+	Order      string    `json:"order,omitempty"`
+	Status     string    `json:"status,omitempty"`
+	Accrual    float64   `json:"accrual,omitempty"`
+	UploadedAt time.Time `json:"UploadedAt,omitempty"`
 }
 
 type Cookie struct {
@@ -52,7 +52,7 @@ type Database struct {
 // 	number      string
 // 	status      string
 // 	accrual     float64
-// 	uploaded_at time.Time
+// 	UploadedAt time.Time
 // }
 
 var DB Database
@@ -78,21 +78,21 @@ type Storage interface {
 // number VARCHAR ( 50 ) UNIQUE NOT NULL,
 // status VARCHAR (50) NOT NULL DEFAULT 'NEW',
 // accrual DOUBLE PRECISION DEFAULT 0,
-// uploaded_at TIMESTAMPTZ,
+// UploadedAt TIMESTAMPTZ,
 func (d *Database) GetOrders() (Ords []Order, err error) {
 	// var userID int
 	// var number string
 	// var status string
 	// var accrual float64
-	// var uploaded_at time.Time
+	// var UploadedAt time.Time
 
 	var order Order
-	rows, err := d.Con.Query(d.Ctx, "SELECT * FROM orders order by uploaded_at")
+	rows, err := d.Con.Query(d.Ctx, "SELECT * FROM orders order by UploadedAt")
 	if err != nil {
 		logrus.Error("Error select orders: ", err)
 	}
 	for rows.Next() {
-		err = rows.Scan(&order.OrderID, &order.UserID, &order.Order, &order.Status, &order.Accrual, &order.Uploaded_at)
+		err = rows.Scan(&order.OrderID, &order.UserID, &order.Order, &order.Status, &order.Accrual, &order.UploadedAt)
 		if err != nil {
 			logrus.Error("Error scan orders: ", err)
 		}
@@ -120,7 +120,7 @@ func (d *Database) LoadOrder(number string, c Cookie) error {
 		d.Loger.Error("Error scan row get user by cookie: ", err)
 		return err
 	}
-	_, err = d.Con.Exec(d.Ctx, "INSERT INTO orders (user_id, number, uploaded_at) VALUES($1,$2, $3)", userID, number, time.Now())
+	_, err = d.Con.Exec(d.Ctx, "INSERT INTO orders (user_id, number, uploadedAt) VALUES($1,$2, $3)", userID, number, time.Now())
 	return err
 }
 

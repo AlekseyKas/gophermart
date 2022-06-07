@@ -28,7 +28,7 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 				logrus.Error("Error select orders: ", err)
 			}
 			for rows.Next() {
-				err = rows.Scan(&order.OrderID, &order.UserID, &order.Order, &order.Status, &order.Accrual, &order.Uploaded_at)
+				err = rows.Scan(&order.OrderID, &order.UserID, &order.Order, &order.Status, &order.Accrual, &order.UploadedAt)
 				if err != nil {
 					logrus.Error("Error scan orders: ", err)
 				}

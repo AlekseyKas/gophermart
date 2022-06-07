@@ -13,7 +13,7 @@ CREATE TABLE orders (
   number VARCHAR ( 50 ) UNIQUE NOT NULL,
   status VARCHAR (50) NOT NULL DEFAULT 'NEW',
   accrual DOUBLE PRECISION DEFAULT 0,
-  uploaded_at TIMESTAMPTZ,
+  UploadedAt TIMESTAMPTZ,
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
 );
 CREATE TABLE balance (  
