@@ -1,32 +1,26 @@
 package main
 
 import (
-	"context"
 	"net/http"
-	"sync"
 
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/app"
-	"github.com/AlekseyKas/gophermart/internal/config"
 	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	wg := &sync.WaitGroup{}
-	ctx, cancel := context.WithCancel(context.Background())
+	// wg := &sync.WaitGroup{}
+	// ctx, cancel := context.WithCancel(context.Background())
 	// err := config.TerminateFlags()
 	// if err != nil {
 	// 	logrus.Error("Error setting args: ", err)
 	// }
 	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
 
-	storage.IDB = &storage.DB
-	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
-	wg.Add(1)
-	go app.WaitSignals(cancel, wg)
+	// storage.IDB = &storage.DB
+	// storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
+	// wg.Add(1)
+	// go app.WaitSignals(cancel, wg)
 
 	r := chi.NewRouter()
 	// b := handlers.NewArgs(r, wg, ctx)
@@ -44,12 +38,12 @@ func main() {
 	// 		logrus.Error(err)
 	// 	}
 	// }(wg)
-	// wg.Add(1)
-	go http.ListenAndServe("127.0.0.1:8080", r)
+
+	http.ListenAndServe("127.0.0.1:8080", r)
 	// <-ctx.Done()
 	// s.Shutdown(ctx)
-	logrus.Info("Stop http server!")
-	wg.Wait()
+	// logrus.Info("Stop http server!")
+	// wg.Wait()
 }
 func Router(r chi.Router) {
 	r.Use(middleware.RequestID)
