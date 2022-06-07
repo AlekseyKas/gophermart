@@ -144,12 +144,11 @@ func login() http.HandlerFunc {
 func (args *B) loadOrder() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
-		logrus.Info("conetneeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", req.Header.Get("Content-Type"))
 		if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
 			rw.WriteHeader(http.StatusBadRequest)
 			return
 		}
-
+		rw.Header().Add("Content-Type", "application/json")
 		var c storage.Cookie
 		for _, cook := range req.Cookies() {
 			if cook.Name == "gophermart" {
@@ -179,7 +178,6 @@ func (args *B) loadOrder() http.HandlerFunc {
 			case err == nil:
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
-				logrus.Info("ppppppppppppppppppppppp", string(out))
 				args.wg.Add(1)
 				go sendAccural(args.wg, args.ctx, out)
 				logrus.Error(err)

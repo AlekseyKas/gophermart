@@ -49,12 +49,12 @@ func TerminateFlags() (err error) {
 	if env.DatabaseURL == "" {
 		Arg.DatabaseURL = Flags.DatabaseURL
 	} else {
-		Arg.DatabaseURL = Flags.DatabaseURL
+		Arg.DatabaseURL = env.DatabaseURL
 	}
 	if env.SystemAddress == "" {
 		Arg.SystemAddress = Flags.SystemAddress
 	} else {
-		Arg.SystemAddress = Flags.SystemAddress
+		Arg.SystemAddress = env.SystemAddress
 	}
 	return err
 }
