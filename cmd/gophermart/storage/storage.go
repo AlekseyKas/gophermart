@@ -94,13 +94,6 @@ type Storage interface {
 	GetBalance(userID int) (balance Balance, err error)
 }
 
-// CREATE TABLE balance (
-//   balance_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-//   user_id INT UNIQUE,
-//   balance DOUBLE PRECISION,
-//   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-// );
-
 func (d *Database) GetBalance(userID int) (balance Balance, err error) {
 	var withdraw float64
 	var withdraws float64
@@ -137,7 +130,6 @@ func (d *Database) Getwithdraws() (withdr []Withdraw, err error) {
 		if err != nil {
 			logrus.Error("Error scan orders: ", err)
 		}
-		logrus.Info("ppppppppklllllllllllllll", w.Order)
 		withdr = append(withdr, w)
 	}
 	return withdr, err
@@ -185,18 +177,6 @@ func (d *Database) UpdateWithdraw(w Withdraw, userID int) (b bool, err error) {
 
 func (d *Database) GetOrders() (Ords []OrderOutput, err error) {
 	var order OrderOutput
-	// var userID int
-	// var orderID int
-	// CREATE TABLE orders (
-	// 	order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	// 	user_id INT,
-	// 	UNIQUE (user_id, number),
-	// 	number VARCHAR (50) UNIQUE NOT NULL,
-	// 	status VARCHAR (50) NOT NULL DEFAULT 'NEW',
-	// 	accrual DOUBLE PRECISION DEFAULT 0,
-	// 	uploaded_at TIMESTAMPTZ,
-	// 	CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-	// );
 	rows, err := d.Con.Query(d.Ctx, "SELECT number, status, accrual, uploaded_at FROM orders order by uploaded_at")
 	if err != nil {
 		logrus.Error("Error select orders: ", err)
@@ -220,16 +200,6 @@ func (d *Database) UpdateOrder(order Order) error {
 }
 
 func (d *Database) LoadOrder(number string, c Cookie, userID int) error {
-	// CREATE TABLE orders (
-	// 	order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	// 	user_id INT,
-	// 	UNIQUE (user_id, number),
-	// 	number VARCHAR (50) UNIQUE NOT NULL,
-	// 	status VARCHAR (50) NOT NULL DEFAULT 'NEW',
-	// 	accrual DOUBLE PRECISION DEFAULT 0,
-	// 	uploaded_at TIMESTAMPTZ,
-	// 	CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-	// );
 	_, err := d.Con.Exec(d.Ctx, "INSERT INTO orders (user_id, number, uploaded_at) VALUES($1,$2, $3)", userID, number, time.Now())
 	return err
 }
@@ -247,9 +217,7 @@ func (d *Database) CheckCookie(c Cookie) (bool, error) {
 		d.Loger.Error("Error scan row: ", err)
 		return false, err
 	}
-	logrus.Info("iIIIIIIIIIIIIIIIIIIIII", cookie)
 	if cookie.Expires.After(time.Now()) {
-		logrus.Info("iIIIIIIIIIIIIIIIIIIIIIaaaaaaaaaaaaaaaaa", cookie.Expires, time.Now())
 		return true, err
 	}
 	return false, err
@@ -293,21 +261,6 @@ func (d *Database) AuthUser(u User) (Cookie, error) {
 	}
 	return cookie, err
 }
-
-// func (d *Database) GetUser(u User) (string, error) {
-// 	var login string
-// 	var password string
-// 	var cookie Cookie
-// 	row := d.Con.QueryRow(d.Ctx, "SELECT * FROM users WHERE login = $1", u.Login)
-// 	err := row.Scan(&login, &password, &cookie)
-// 	if err != nil {
-// 		d.Loger.Error("Error scan row: ", err)
-// 	}
-// 	logrus.Info(")))))))))))))))))))", cookie.Expires.After(time.Now()))
-// 	valhash := hmac.New(sha256.New, []byte(login+password))
-// 	hh := fmt.Sprintf("%x", valhash.Sum(nil))
-// 	return hh, nil
-// }
 
 func (d *Database) InitDB(ctx context.Context, DBURL string) error {
 	DB.Ctx = ctx
@@ -366,21 +319,3 @@ func (d *Database) CreateUser(u User) (cookie Cookie, err error) {
 		return cookie, err
 	}
 }
-
-// func (d *Database) ReconnectDB() error {
-// 	var err error
-// 	for i := 0; i < 5; i++ {
-// 		select {
-// 		case <-d.Ctx.Done():
-// 			return nil
-// 		case <-time.After(2 * time.Second):
-// 			DB.Con, err = database.Connect(d.Ctx, d.DBURL, d.Loger)
-// 			if err != nil {
-// 				d.Loger.Error("Error conncet to DB: ", err)
-// 			} else {
-// 				return nil
-// 			}
-// 		}
-// 	}
-// 	return err
-// }

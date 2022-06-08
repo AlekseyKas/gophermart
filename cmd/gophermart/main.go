@@ -35,7 +35,7 @@ func main() {
 	if err != nil {
 		logrus.Error("Error setting args: ", err)
 	}
-	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
+	logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<", config.Arg.SystemAddress, "<<<<<<<<<<<<<<<<<<<<<<")
 
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)

@@ -41,8 +41,8 @@ func TerminateFlags() (err error) {
 	flag.StringVar(&Flags.DatabaseURL, "d", "postgres://user:user@127.0.0.1:5432/db", "Database URL")
 	flag.StringVar(&Flags.SystemAddress, "r", "127.0.0.1:8090", "Address of system accrual")
 	flag.Parse()
-	logrus.Info("[[[[[[[[[[[[[[[", env)
-	logrus.Info("5555555555555555555555555555[[[[[[[[[[[[[[[", &Flags)
+	logrus.Info("[[[[[[[[[[[[[[[ ENV", env)
+	logrus.Info("5555555555555555555555555555[[[[[[[[[[[[[[[ FLAGS", &Flags)
 	envAddress, _ := os.LookupEnv("RUN_ADDRESS")
 	if envAddress == "" {
 		Arg.Address = Flags.Address

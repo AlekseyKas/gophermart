@@ -182,8 +182,6 @@ func loadOrder() http.HandlerFunc {
 			case err == nil:
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
-				// args.wg.Add(1)
-				// go sendAccural(args.wg, args.ctx, out)
 				logrus.Error(err)
 			case strings.Contains(err.Error(), "orders_number_key"):
 				logrus.Error("Order already exist and add other user")
@@ -193,7 +191,6 @@ func loadOrder() http.HandlerFunc {
 			default:
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
-			// rw.WriteHeader(http.StatusOK)
 		}
 	}
 }
@@ -242,11 +239,9 @@ func withdrawOrder() http.HandlerFunc {
 			}
 			switch {
 			case b:
-				logrus.Info("777777777777777777777777", b)
 				rw.Header().Add("Content-Type", "application.json")
 				rw.WriteHeader(http.StatusOK)
 			case !b:
-				logrus.Info("888888888888888888888888", b)
 				rw.Header().Add("Content-Type", "application.json")
 				rw.WriteHeader(http.StatusPaymentRequired)
 			}
@@ -287,6 +282,7 @@ func getOrders() http.HandlerFunc {
 		} else {
 			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusOK)
+			logrus.Info("OOOOOOOOOOOOOOOOOOOOOOOO", orders)
 			var buf bytes.Buffer
 			encoder := json.NewEncoder(&buf)
 			err := encoder.Encode(orders)

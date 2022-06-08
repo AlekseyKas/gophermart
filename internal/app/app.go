@@ -33,19 +33,3 @@ func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
-
-// func RunAccurual(ctx context.Context, wg *sync.WaitGroup, address string) {
-// 	defer wg.Done()
-// 	cmd := exec.Command("cmd/accrual/accrual_linux_amd64")
-// 	err := cmd.Start()
-// 	if err != nil {
-// 		logrus.Error(err)
-// 	}
-// 	defer func(p *os.Process) {
-// 		err = p.Kill()
-// 		if err != nil {
-// 			logrus.Error(err)
-// 		}
-// 	}(cmd.Process)
-// 	<-ctx.Done()
-// }

@@ -45,7 +45,6 @@ func CheckCookie(next http.Handler) http.Handler {
 					rw.WriteHeader(http.StatusOK)
 					return
 				} else {
-					logrus.Info("11111111111111122222222222: ", b)
 					next.ServeHTTP(rw, req)
 				}
 
@@ -53,7 +52,6 @@ func CheckCookie(next http.Handler) http.Handler {
 				if req.URL.Path == "/api/user/register" || req.URL.Path == "/api/user/login" {
 					next.ServeHTTP(rw, req)
 				} else {
-					logrus.Info("111111111111111aaaaaaaaaaa: ", b)
 					rw.WriteHeader(http.StatusUnauthorized)
 					return
 				}
@@ -62,7 +60,6 @@ func CheckCookie(next http.Handler) http.Handler {
 			if req.URL.Path == "/api/user/register" || req.URL.Path == "/api/user/login" {
 				next.ServeHTTP(rw, req)
 			} else {
-				logrus.Info("111111111111111bbbbbbbbbb")
 				rw.WriteHeader(http.StatusUnauthorized)
 				return
 			}
