@@ -10,11 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type gzipBodyWriter struct {
-	http.ResponseWriter
-	writer io.Writer
-}
-
 func CheckCookie(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var cookie *http.Cookie
@@ -66,6 +61,12 @@ func CheckCookie(next http.Handler) http.Handler {
 		}
 	})
 }
+
+type gzipBodyWriter struct {
+	http.ResponseWriter
+	writer io.Writer
+}
+
 func (gz gzipBodyWriter) Write(b []byte) (int, error) {
 	return gz.writer.Write(b)
 }
@@ -98,9 +99,11 @@ func DecompressGzip(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if !strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+			logrus.Info("WIIIIIIIIIIIIIIIIIIIIIIIITHOUT")
 			next.ServeHTTP(w, r)
 			return
 		}
+		logrus.Info("GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG")
 
 		gz, err := gzip.NewReader(r.Body)
 		if err != nil {
