@@ -1,12 +1,19 @@
 package middlewarecustom
 
 import (
+	"compress/gzip"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/sirupsen/logrus"
 )
+
+type gzipBodyWriter struct {
+	http.ResponseWriter
+	writer io.Writer
+}
 
 func CheckCookie(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -60,5 +67,49 @@ func CheckCookie(next http.Handler) http.Handler {
 				return
 			}
 		}
+	})
+}
+
+func CompressGzip(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		gz, err := gzip.NewWriterLevel(w, gzip.BestCompression)
+		if err != nil {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+		defer gz.Close()
+
+		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Vary", "Accept-Encoding")
+		w.Header().Del("Content-Length")
+		next.ServeHTTP(gzipBodyWriter{
+			ResponseWriter: w,
+			writer:         gz,
+		}, r)
+	})
+}
+
+func DecompressGzip(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if !strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		gz, err := gzip.NewReader(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		gz.Close()
+		r.Body = gz
+		next.ServeHTTP(w, r)
+
 	})
 }

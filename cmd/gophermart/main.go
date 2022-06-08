@@ -28,6 +28,7 @@ func main() {
 	} else {
 		logrus.AddHook(hook)
 	}
+
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	err = config.TerminateFlags()
