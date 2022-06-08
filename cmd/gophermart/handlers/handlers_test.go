@@ -307,17 +307,48 @@ func Test_loadOrder(t *testing.T) {
 			url:         "/api/user/orders",
 			contentType: "application/json",
 			want: want{
-				contentType: "text/plain",
+				contentType: "application/json",
 				statusCode:  400,
 			},
 		},
 		{
-			name:        "wrong format req",
+			name:        "###get orders",
 			method:      "GET",
 			url:         "/api/user/orders",
 			contentType: "application/json",
 			want: want{
-				contentType: "text/plain",
+				contentType: "application/json",
+				statusCode:  200,
+			},
+		},
+		{
+			name:        "###wrong balance",
+			method:      "GET",
+			url:         "/api/user/balance",
+			contentType: "application/json",
+			want: want{
+				contentType: "application/json",
+				statusCode:  200,
+			},
+		},
+		{
+			name:        "###get withdraw",
+			method:      "GET",
+			url:         "/api/user/balance/withdrawals",
+			contentType: "application/json",
+			want: want{
+				contentType: "application/json",
+				statusCode:  204,
+			},
+		},
+		{
+			name:        "###get withdraw",
+			method:      "POST",
+			body:        []byte(`"{order: "2377225624", "sum": 121}`),
+			url:         "/api/user/balance/withdraw",
+			contentType: "application/json",
+			want: want{
+				contentType: "application/json",
 				statusCode:  200,
 			},
 		},
@@ -362,7 +393,7 @@ func Test_loadOrder(t *testing.T) {
 			require.NoError(t, err)
 			resp, err := http.DefaultClient.Do(req)
 			require.Equal(t, tt.want.statusCode, resp.StatusCode)
-
+			logrus.Info("iiiiiiiiiiiiiiiiiiiiiii", resp.Header)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 		})

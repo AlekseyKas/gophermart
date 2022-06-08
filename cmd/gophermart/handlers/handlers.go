@@ -262,14 +262,13 @@ func getWithdraws() http.HandlerFunc {
 		if len(withdraws) == 0 {
 			rw.WriteHeader(http.StatusNoContent)
 		} else {
-			rw.WriteHeader(http.StatusOK)
-
 			var buf bytes.Buffer
 			encoder := json.NewEncoder(&buf)
 			err := encoder.Encode(withdraws)
 			if err != nil {
 				http.Error(rw, err.Error(), http.StatusBadRequest)
 			}
+			rw.WriteHeader(http.StatusOK)
 			rw.Write(buf.Bytes())
 		}
 	}
