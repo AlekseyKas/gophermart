@@ -10,12 +10,13 @@ CREATE TABLE orders (
   order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id INT,
   UNIQUE (user_id, number),
-  number VARCHAR ( 50 ) UNIQUE NOT NULL,
+  number VARCHAR (50) UNIQUE NOT NULL,
   status VARCHAR (50) NOT NULL DEFAULT 'NEW',
   accrual DOUBLE PRECISION DEFAULT 0,
-  UploadedAt TIMESTAMPTZ,
+  uploaded_at TIMESTAMPTZ,
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
 );
+
 CREATE TABLE balance (  
   balance_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id INT,
@@ -24,9 +25,9 @@ CREATE TABLE balance (
 );
 
 CREATE TABLE withdraws (  
-  withdraw_id INT NOT NULL GENERATED ALWAYS AS IDENTITY,
+  withdraw_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id INT,
-  order VARCHAR ( 50 ) UNIQUE NOT NULL,
+  ordername VARCHAR (50) UNIQUE NOT NULL,
   withdraws DOUBLE PRECISION,
   processed_at TIMESTAMPTZ,
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)

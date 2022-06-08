@@ -17,6 +17,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Withdraw struct {
+	Order       string    `json:"order,omitempty"`
+	Sum         float64   `json:"sum,omitempty"`
+	ProcessedAt time.Time `json:"processedAt,omitempty"`
+}
 type Order struct {
 	OrderID    int
 	UserID     int       `json:"userID,omitempty"`
@@ -59,6 +64,7 @@ var DB Database
 var IDB Storage
 var Users User
 var Orders Order
+var Withdraws Withdraw
 
 type Storage interface {
 	InitDB(ctx context.Context, DBURL string) error
@@ -67,27 +73,42 @@ type Storage interface {
 	// GetUser(u User) (string, error)
 	AuthUser(u User) (Cookie, error)
 	// ReconnectDB() error
-	LoadOrder(number string, c Cookie) error
+	LoadOrder(number string, c Cookie, userID int) error
 	UpdateOrder(order Order) error
 	GetOrders() (Ords []Order, err error)
+	UpdateWithdraw(w Withdraw, userID int) error
+	CheckUser(c Cookie) (userID int, err error)
 }
 
-// order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-// user_id INT,
-// UNIQUE (user_id, number),
-// number VARCHAR ( 50 ) UNIQUE NOT NULL,
-// status VARCHAR (50) NOT NULL DEFAULT 'NEW',
-// accrual DOUBLE PRECISION DEFAULT 0,
-// UploadedAt TIMESTAMPTZ,
-func (d *Database) GetOrders() (Ords []Order, err error) {
-	// var userID int
-	// var number string
-	// var status string
-	// var accrual float64
-	// var UploadedAt time.Time
+func (d *Database) CheckUser(c Cookie) (userID int, err error) {
+	var login string
+	var password string
+	var cookie Cookie
 
+	row := d.Con.QueryRow(d.Ctx, "SELECT * FROM users WHERE cookie->>'Value' = $1", c.Value)
+	err = row.Scan(&userID, &login, &password, &cookie)
+	if err != nil {
+		d.Loger.Error("Error scan row get user by cookie: ", err)
+		return userID, err
+	}
+	return userID, nil
+}
+
+func (d *Database) UpdateWithdraw(w Withdraw, userID int) error {
+	// 	// CREATE TABLE withdraws (
+	// 	// 	withdraw_id INT NOT NULL GENERATED ALWAYS AS IDENTITY,
+	// 	// 	user_id INT,
+	// 	// 	order VARCHAR ( 50 ) UNIQUE NOT NULL,
+	// 	// 	withdraws DOUBLE PRECISION,
+	// 	// 	processed_at TIMESTAMPTZ,
+	// 	// 	CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
+	// 	// )
+	_, err := d.Con.Exec(d.Ctx, "INSERT INTO withdraws (user_id, ordername, withdraws, processed_at) VALUES($1,$2, $3, $4)", userID, w.Order, w.Sum, time.Now())
+	return err
+}
+func (d *Database) GetOrders() (Ords []Order, err error) {
 	var order Order
-	rows, err := d.Con.Query(d.Ctx, "SELECT * FROM orders order by UploadedAt")
+	rows, err := d.Con.Query(d.Ctx, "SELECT * FROM orders order by uploaded_at")
 	if err != nil {
 		logrus.Error("Error select orders: ", err)
 	}
@@ -108,19 +129,19 @@ func (d *Database) UpdateOrder(order Order) error {
 	return err
 }
 
-func (d *Database) LoadOrder(number string, c Cookie) error {
-	var login string
-	var password string
-	var cookie Cookie
-	var userID int
+func (d *Database) LoadOrder(number string, c Cookie, userID int) error {
+	// var login string
+	// var password string
+	// var cookie Cookie
+	// var userID int
 
-	row := d.Con.QueryRow(d.Ctx, "SELECT * FROM users WHERE cookie->>'Value' = $1", c.Value)
-	err := row.Scan(&userID, &login, &password, &cookie)
-	if err != nil {
-		d.Loger.Error("Error scan row get user by cookie: ", err)
-		return err
-	}
-	_, err = d.Con.Exec(d.Ctx, "INSERT INTO orders (user_id, number, uploadedAt) VALUES($1,$2, $3)", userID, number, time.Now())
+	// row := d.Con.QueryRow(d.Ctx, "SELECT * FROM users WHERE cookie->>'Value' = $1", c.Value)
+	// err := row.Scan(&userID, &login, &password, &cookie)
+	// if err != nil {
+	// 	d.Loger.Error("Error scan row get user by cookie: ", err)
+	// 	return err
+	// }
+	_, err := d.Con.Exec(d.Ctx, "INSERT INTO orders (user_id, number, uploaded_at) VALUES($1,$2, $3)", userID, number, time.Now())
 	return err
 }
 

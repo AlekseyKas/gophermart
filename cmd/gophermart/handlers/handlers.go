@@ -168,7 +168,11 @@ func loadOrder() http.HandlerFunc {
 		case checksum.ErrInvalidChecksum:
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case nil:
-			err := storage.DB.LoadOrder(string(out), c)
+			userID, err := storage.DB.CheckUser(c)
+			if err != nil {
+				logrus.Error("Faild check user: ", err)
+			}
+			err = storage.DB.LoadOrder(string(out), c, userID)
 			if err != nil {
 				logrus.Error("Error load order to DB: ", err)
 			}
@@ -194,6 +198,48 @@ func loadOrder() http.HandlerFunc {
 
 func withdrawOrder() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
+		if !strings.Contains(req.Header.Get("Content-Type"), "application/json") {
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		var c storage.Cookie
+		for _, cook := range req.Cookies() {
+			if cook.Name == "gophermart" {
+				c = storage.Cookie{
+					Name:  cook.Name,
+					Value: cook.Value,
+				}
+			}
+		}
+		defer req.Body.Close()
+		out, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			logrus.Error("Faild read body withdraw: ", err)
+		}
+		var w storage.Withdraw
+		err = json.Unmarshal(out, &w)
+		if err != nil {
+			logrus.Error("Error unmarshal withdraw: ", err)
+		}
+		logrus.Info(w.Order)
+		err = luhn.Check(w.Order)
+		switch err {
+		case checksum.ErrInvalidNumber:
+			rw.WriteHeader(http.StatusUnprocessableEntity)
+		case checksum.ErrInvalidChecksum:
+			rw.WriteHeader(http.StatusUnprocessableEntity)
+		case nil:
+			userID, err := storage.DB.CheckUser(c)
+			if err != nil {
+				logrus.Error("Faild check user: ", err)
+			}
+			err = storage.DB.UpdateWithdraw(w, userID)
+			if err != nil {
+				logrus.Error("Error update withdraw: ", err)
+			}
+
+		}
 
 	}
 }
