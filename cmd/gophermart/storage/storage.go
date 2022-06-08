@@ -34,7 +34,7 @@ type Order struct {
 type OrderOutput struct {
 	Order      string    `json:"order,omitempty"`
 	Status     string    `json:"status,omitempty"`
-	Accrual    float64   `json:"accrual"`
+	Accrual    float64   `json:"accrual,omitempty"`
 	UploadedAt time.Time `json:"uploaded_at,omitempty"`
 }
 
