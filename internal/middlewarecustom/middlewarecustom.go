@@ -66,6 +66,9 @@ func CheckCookie(next http.Handler) http.Handler {
 		}
 	})
 }
+func (gz gzipBodyWriter) Write(b []byte) (int, error) {
+	return gz.writer.Write(b)
+}
 
 func CompressGzip(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
