@@ -299,6 +299,31 @@ func getOrders() http.HandlerFunc {
 
 func getBalance() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		logrus.Info("balance")
+		var c storage.Cookie
+		for _, cook := range req.Cookies() {
+			if cook.Name == "gophermart" {
+				c = storage.Cookie{
+					Name:  cook.Name,
+					Value: cook.Value,
+				}
+			}
+		}
+		userID, err := storage.DB.CheckUser(c)
+		if err != nil {
+			logrus.Error("Error check userID: ", err)
+		}
+		balance, err := storage.DB.GetBalance(userID)
+		if err != nil {
+			logrus.Error("Error check userID: ", err)
+		}
+		var buf bytes.Buffer
+		encoder := json.NewEncoder(&buf)
+		err = encoder.Encode(balance)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+		}
+		rw.Header().Add("Content-Type", "application/json")
+		rw.Write(buf.Bytes())
+		rw.WriteHeader(http.StatusOK)
 	}
 }

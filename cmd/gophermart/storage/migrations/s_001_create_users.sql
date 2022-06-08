@@ -27,7 +27,7 @@ CREATE TABLE balance (
 CREATE TABLE withdraws (  
   withdraw_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id INT,
-  ordername VARCHAR (50) UNIQUE NOT NULL,
+  ordername VARCHAR (50) NOT NULL,
   withdraws DOUBLE PRECISION,
   processed_at TIMESTAMPTZ,
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)

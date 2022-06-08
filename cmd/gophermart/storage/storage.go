@@ -59,6 +59,11 @@ type Database struct {
 	Ctx   context.Context
 }
 
+type Balance struct {
+	Current   float64
+	Withdrawn float64
+}
+
 // type Order struct {
 // 	userID      int
 // 	number      string
@@ -86,16 +91,43 @@ type Storage interface {
 	UpdateWithdraw(w Withdraw, userID int) (b bool, err error)
 	CheckUser(c Cookie) (userID int, err error)
 	Getwithdraws() (withdr []Withdraw, err error)
+	GetBalance(userID int) (balance Balance, err error)
 }
 
-// CREATE TABLE withdraws (
-//   withdraw_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-//   user_id INT,
-//   ordername VARCHAR (50) UNIQUE NOT NULL,
-//     DOUBLE PRECISION,
-//   processed_at TIMESTAMPTZ,
+// CREATE TABLE balance (
+//   balance_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+//   user_id INT UNIQUE,
+//   balance DOUBLE PRECISION,
 //   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-// )
+// );
+
+func (d *Database) GetBalance(userID int) (balance Balance, err error) {
+	var withdraw float64
+	var withdraws float64
+
+	row := d.Con.QueryRow(d.Ctx, "SELECT balance FROM balance")
+	if err != nil {
+		logrus.Error("Error select orders: ", err)
+	}
+	err = row.Scan(&balance.Current)
+	if err != nil {
+		d.Loger.Error("Error scan row get user by cookie: ", err)
+		return balance, err
+	}
+	rows, err := d.Con.Query(d.Ctx, "SELECT withdraws FROM withdraws WHERE user_id = $1", userID)
+	if err != nil {
+		logrus.Error("Error select orders: ", err)
+	}
+	for rows.Next() {
+		err = rows.Scan(&withdraw)
+		if err != nil {
+			logrus.Error("Error scan orders: ", err)
+		}
+		withdraws += withdraw
+	}
+	balance.Withdrawn = withdraws
+	return balance, err
+}
 
 func (d *Database) Getwithdraws() (withdr []Withdraw, err error) {
 	var w Withdraw
