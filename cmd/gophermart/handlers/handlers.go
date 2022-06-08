@@ -280,8 +280,6 @@ func getOrders() http.HandlerFunc {
 			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusNoContent)
 		} else {
-			rw.Header().Add("Content-Type", "application/json")
-			rw.WriteHeader(http.StatusOK)
 			logrus.Info("OOOOOOOOOOOOOOOOOOOOOOOO", orders)
 
 			var buf bytes.Buffer
@@ -290,6 +288,8 @@ func getOrders() http.HandlerFunc {
 			if err != nil {
 				http.Error(rw, err.Error(), http.StatusBadRequest)
 			}
+			rw.Header().Add("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusOK)
 			rw.Write(buf.Bytes())
 		}
 	}
