@@ -180,6 +180,7 @@ func loadOrder() http.HandlerFunc {
 			}
 			switch {
 			case err == nil:
+				logrus.Info("ORRRRRRRRRRRRRRRRRRRRRRRRRR: ", string(out), "uuuu: ", userID)
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
 				logrus.Error(err)
