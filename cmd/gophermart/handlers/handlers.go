@@ -279,12 +279,12 @@ func getOrders() http.HandlerFunc {
 		if err != nil {
 			logrus.Error(err)
 		}
-		rw.Header().Add("Content-Type", "application/json")
 		if len(orders) == 0 {
+			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusNoContent)
 		} else {
+			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusOK)
-
 			var buf bytes.Buffer
 			encoder := json.NewEncoder(&buf)
 			err := encoder.Encode(orders)

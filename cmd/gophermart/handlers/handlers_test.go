@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
@@ -207,6 +208,7 @@ func Test_login(t *testing.T) {
 		})
 	}
 	helpers.StopDB(id)
+	time.Sleep(time.Second * 2)
 	body := []byte(`{"login": "user1", "password": "password"}`)
 	buff := bytes.NewBuffer(body)
 	req, err := http.NewRequest("POST", ts.URL+"/api/user/login", buff)
@@ -365,8 +367,10 @@ func Test_loadOrder(t *testing.T) {
 	require.NoError(t, err)
 	defer func(p *os.Process) {
 		err := p.Kill()
+		time.Sleep(time.Second * 7)
 		require.NoError(t, err)
 	}(cmd.Process)
+
 	DBURL, id, _ := helpers.StartDB()
 
 	storage.IDB = &storage.DB
@@ -428,6 +432,7 @@ func Test_loadOrder(t *testing.T) {
 	defer res.Body.Close()
 	//stop DB
 	helpers.StopDB(id)
+	time.Sleep(time.Second * 2)
 
 	//after stop DB 500
 	body = []byte("12345678903")

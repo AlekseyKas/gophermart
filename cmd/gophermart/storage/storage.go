@@ -169,12 +169,11 @@ func (d *Database) UpdateWithdraw(w Withdraw, userID int) (b bool, err error) {
 			logrus.Error("Error scan orders: ", err)
 		}
 	}
-	logrus.Info("555555555555555555555555555: ", balance, w.Sum)
 	if balance < w.Sum {
 		return b, err
 	} else {
 		bal := balance - w.Sum
-		_, err = d.Con.Exec(d.Ctx, "INSERT INTO balance (user_id, balance) VALUES($1,$2) ON CONFLICT (user_id) DO UPDATE SET balance = $2", userID, bal)
+		_, err = d.Con.Exec(d.Ctx, "UPDATE balance SET balance = $1 WHERE user_id = $2;", userID, bal)
 		if err != nil {
 			logrus.Error("Error update balance: ", err)
 		}
@@ -356,6 +355,14 @@ func (d *Database) CreateUser(u User) (cookie Cookie, err error) {
 			d.Loger.Error("Error create user: ", err)
 			return cookie, err
 		}
+		var userID int
+
+		row := d.Con.QueryRow(d.Ctx, "SELECT user_id FROM users WHERE cookie->>'Value' = $1", cookie.Value)
+		err = row.Scan(&userID)
+		if err != nil {
+			d.Loger.Error("Error scan row get user by cookie: ", err)
+		}
+		_, err = d.Con.Exec(d.Ctx, "INSERT INTO balance (user_id, balance) VALUES($1,$2)", userID, 0)
 		return cookie, err
 	}
 }

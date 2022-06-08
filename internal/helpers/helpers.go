@@ -83,7 +83,6 @@ func StartDB() (dburl string, id string, err error) {
 	filter := filters.NewArgs()
 	filter.Add("id", resp.ID)
 	var C types.Container
-
 	for {
 		containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{Filters: filter})
 		if err != nil {
