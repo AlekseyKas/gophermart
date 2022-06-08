@@ -10,14 +10,27 @@ import (
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config"
+	lokihook "github.com/akkuman/logrus-loki-hook"
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	lokiHookConfig := &lokihook.Config{
+		URL: "https://logsremoteloki:efnd9DG510YnZQUjMlgMYVIN@loki.duduh.ru/api/prom/push",
+		Labels: map[string]string{
+			"app": "track-devops",
+		},
+	}
+	hook, err := lokihook.NewHook(lokiHookConfig)
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		logrus.AddHook(hook)
+	}
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
-	err := config.TerminateFlags()
+	err = config.TerminateFlags()
 	if err != nil {
 		logrus.Error("Error setting args: ", err)
 	}
