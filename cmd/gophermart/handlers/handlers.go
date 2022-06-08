@@ -36,8 +36,8 @@ func Router(r chi.Router) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middlewarecustom.CheckCookie)
-	r.Use(middlewarecustom.CompressGzip)
-	r.Use(middlewarecustom.DecompressGzip)
+	// r.Use(middlewarecustom.CompressGzip)
+	// r.Use(middlewarecustom.DecompressGzip)
 
 	//регистрация пользователя
 	r.Post("/api/user/register", register())
