@@ -20,7 +20,7 @@ import (
 type Withdraw struct {
 	Order       string    `json:"order,omitempty"`
 	Sum         float64   `json:"sum,omitempty"`
-	ProcessedAt time.Time `json:"processedAt,omitempty"`
+	ProcessedAt time.Time `json:"processed_at,omitempty"`
 }
 
 type Order struct {
@@ -34,8 +34,8 @@ type Order struct {
 type OrderOutput struct {
 	Order      string    `json:"order,omitempty"`
 	Status     string    `json:"status,omitempty"`
-	Accrual    float64   `json:"accrual,omitempty"`
-	UploadedAt time.Time `json:"UploadedAt,omitempty"`
+	Accrual    float64   `json:"accrual"`
+	UploadedAt time.Time `json:"uploaded_at,omitempty"`
 }
 
 type Cookie struct {
@@ -60,8 +60,8 @@ type Database struct {
 }
 
 type Balance struct {
-	Current   float64
-	Withdrawn float64
+	Current   float64 `json:"current"`
+	Withdrawn float64 `json:"withdrawn"`
 }
 
 // type Order struct {
