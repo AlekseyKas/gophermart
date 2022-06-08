@@ -106,9 +106,6 @@ func (d *Database) GetBalance(userID int) (balance Balance, err error) {
 	var withdraws float64
 
 	row := d.Con.QueryRow(d.Ctx, "SELECT balance FROM balance")
-	if err != nil {
-		logrus.Error("Error select orders: ", err)
-	}
 	err = row.Scan(&balance.Current)
 	if err != nil {
 		d.Loger.Error("Error scan row get user by cookie: ", err)
