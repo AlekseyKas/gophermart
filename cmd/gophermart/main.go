@@ -19,7 +19,7 @@ func main() {
 	lokiHookConfig := &lokihook.Config{
 		URL: "https://logsremoteloki:efnd9DG510YnZQUjMlgMYVIN@loki.duduh.ru/api/prom/push",
 		Labels: map[string]string{
-			"app": "track-devops",
+			"app": "lexa-gophermart",
 		},
 	}
 	hook, err := lokihook.NewHook(lokiHookConfig)
