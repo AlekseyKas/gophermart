@@ -27,7 +27,7 @@ func CheckCookie(next http.Handler) http.Handler {
 			switch {
 			case err == nil:
 				logrus.Info("Get cookie without err")
-			case strings.Contains(err.Error(), "unexpected EOF") || strings.Contains(err.Error(), "failed to connect to"):
+			case strings.Contains(err.Error(), "unexpected EOF") || strings.Contains(err.Error(), "failed"):
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
 
