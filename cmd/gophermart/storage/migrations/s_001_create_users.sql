@@ -19,7 +19,7 @@ CREATE TABLE orders (
 
 CREATE TABLE balance (  
   balance_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  user_id INT,
+  user_id INT UNIQUE,
   balance DOUBLE PRECISION,
   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
 );

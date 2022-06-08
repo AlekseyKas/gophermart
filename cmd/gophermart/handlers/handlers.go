@@ -50,7 +50,7 @@ func Router(r chi.Router) {
 	// получение текущего баланса счёта баллов лояльности пользователя
 	r.Get("/api/user/balance", getBalance())
 	// получение информации о выводе средств с накопительного счёта пользователем
-	r.Get("/api/user/balance/withdrawals", withdraw())
+	r.Get("/api/user/balance/withdrawals", getWithdraws())
 
 }
 
@@ -234,19 +234,44 @@ func withdrawOrder() http.HandlerFunc {
 			if err != nil {
 				logrus.Error("Faild check user: ", err)
 			}
-			err = storage.DB.UpdateWithdraw(w, userID)
+			b, err := storage.DB.UpdateWithdraw(w, userID)
 			if err != nil {
 				logrus.Error("Error update withdraw: ", err)
 			}
-
+			switch {
+			case b:
+				logrus.Info("777777777777777777777777", b)
+				rw.Header().Add("Content-Type", "application.json")
+				rw.WriteHeader(http.StatusOK)
+			case !b:
+				logrus.Info("888888888888888888888888", b)
+				rw.Header().Add("Content-Type", "application.json")
+				rw.WriteHeader(http.StatusPaymentRequired)
+			}
 		}
-
 	}
 }
 
-func withdraw() http.HandlerFunc {
+func getWithdraws() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
+		withdraws, err := storage.DB.Getwithdraws()
+		if err != nil {
+			logrus.Error("Error get withdraws: ", err)
+		}
+		rw.Header().Add("Content-Type", "application/json")
+		if len(withdraws) == 0 {
+			rw.WriteHeader(http.StatusNoContent)
+		} else {
+			rw.WriteHeader(http.StatusOK)
 
+			var buf bytes.Buffer
+			encoder := json.NewEncoder(&buf)
+			err := encoder.Encode(withdraws)
+			if err != nil {
+				http.Error(rw, err.Error(), http.StatusBadRequest)
+			}
+			rw.Write(buf.Bytes())
+		}
 	}
 }
 func getOrders() http.HandlerFunc {
