@@ -173,7 +173,7 @@ func (d *Database) UpdateWithdraw(w Withdraw, userID int) (b bool, err error) {
 		return b, err
 	} else {
 		bal := balance - w.Sum
-		_, err = d.Con.Exec(d.Ctx, "UPDATE balance SET balance = $1 WHERE user_id = $2;", userID, bal)
+		_, err = d.Con.Exec(d.Ctx, "UPDATE balance SET balance = $1 WHERE user_id = $2;", bal, userID)
 		if err != nil {
 			logrus.Error("Error update balance: ", err)
 		}

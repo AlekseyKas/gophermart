@@ -59,7 +59,20 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 					}
 					//update balance
 					if order.Status == "INVALID" || order.Status == "PROCESSED" {
-						_, err := storage.DB.Con.Exec(storage.DB.Ctx, "INSERT INTO balance (user_id, balance) VALUES($1,$2)", Ords[i].UserID, order.Accrual)
+						var balance float64
+						row, err := storage.DB.Con.Query(storage.DB.Ctx, "SELECT balance FROM balance WHERE user_id = $1", Ords[i].UserID)
+						if err != nil {
+							logrus.Error("Error select balance: ", err)
+						}
+						for row.Next() {
+							err = row.Scan(&balance)
+							if err != nil {
+								logrus.Error("Error scan orders: ", err)
+							}
+						}
+						balanceRes := balance + order.Accrual
+						_, err = storage.DB.Con.Exec(storage.DB.Ctx, "UPDATE balance SET balance = $1 WHERE user_id = $2;", balanceRes, Ords[i].UserID)
+
 						if err != nil {
 							logrus.Error("Error update balance: ", err)
 						}
