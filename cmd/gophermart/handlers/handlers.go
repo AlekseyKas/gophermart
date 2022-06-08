@@ -320,8 +320,9 @@ func getBalance() http.HandlerFunc {
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusBadRequest)
 		}
+		logrus.Info("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", balance)
 		rw.Header().Add("Content-Type", "application/json")
-		rw.Write(buf.Bytes())
 		rw.WriteHeader(http.StatusOK)
+		rw.Write(buf.Bytes())
 	}
 }
