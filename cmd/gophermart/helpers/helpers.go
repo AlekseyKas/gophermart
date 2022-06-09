@@ -50,6 +50,7 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 					if err != nil {
 						logrus.Error("Error unmarshal order from accrual: ", err)
 					}
+					logrus.Info("UIUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU:", Ords[i].Status, "NNNNNNNNNNNNNNN", order.Status)
 					//update status &accrual
 					if Ords[i].Status != order.Status {
 						_, err = storage.DB.Con.Exec(storage.DB.Ctx, "UPDATE orders SET status = $1, accrual = $2  WHERE number = $3;", order.Status, order.Accrual, order.Order)
