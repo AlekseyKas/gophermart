@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	lokihook "github.com/akkuman/logrus-loki-hook"
 	"github.com/go-chi/chi/v5"
@@ -57,9 +58,9 @@ func main() {
 		}
 	}(wg)
 	<-ctx.Done()
-
-	s.Shutdown(ctx)
-
+	ctxx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	s.Shutdown(ctxx)
 	logrus.Info("Http server stop!")
 	wg.Wait()
 
