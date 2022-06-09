@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/sirupsen/logrus"
+
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 )
 
 func CheckCookie(next http.Handler) http.Handler {

@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/helpers"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
+	"github.com/AlekseyKas/gophermart/internal/helpers"
 )
 
 // Возможные коды ответа:
@@ -129,6 +129,7 @@ func Test_login(t *testing.T) {
 		Login:    "user1",
 		Password: "password",
 	}
+	IpAddr := "127.0.0.1"
 
 	type want struct {
 		contentType string
@@ -191,7 +192,7 @@ func Test_login(t *testing.T) {
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, DBURL)
 	logrus.Info(DBURL)
-	storage.DB.CreateUser(User)
+	storage.DB.CreateUser(User, IpAddr)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -245,6 +246,7 @@ func Test_loadOrder(t *testing.T) {
 		Login:    "user3",
 		Password: "password",
 	}
+	IpAddr := "127.0.0.1"
 
 	type want struct {
 		contentType string
@@ -376,9 +378,9 @@ func Test_loadOrder(t *testing.T) {
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, DBURL)
 	//first user
-	cookie, _ := storage.DB.CreateUser(User)
-	cookie2, _ := storage.DB.CreateUser(User2)
-	cookie3, _ := storage.DB.CreateUser(User3)
+	cookie, _ := storage.DB.CreateUser(User, IpAddr)
+	cookie2, _ := storage.DB.CreateUser(User2, IpAddr)
+	cookie3, _ := storage.DB.CreateUser(User3, IpAddr)
 
 	testaccrualrequests(t, "http://0.0.0.0:8090")
 
@@ -397,7 +399,6 @@ func Test_loadOrder(t *testing.T) {
 			require.NoError(t, err)
 			resp, err := http.DefaultClient.Do(req)
 			require.Equal(t, tt.want.statusCode, resp.StatusCode)
-			logrus.Info("iiiiiiiiiiiiiiiiiiiiiii", resp.Header)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 		})

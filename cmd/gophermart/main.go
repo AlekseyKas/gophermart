@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"sync"
 
+	lokihook "github.com/akkuman/logrus-loki-hook"
+	"github.com/go-chi/chi/v5"
+	"github.com/sirupsen/logrus"
+
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/helpers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config"
-	lokihook "github.com/akkuman/logrus-loki-hook"
-	"github.com/go-chi/chi/v5"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -35,15 +36,12 @@ func main() {
 	if err != nil {
 		logrus.Error("Error setting args: ", err)
 	}
-	logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<", config.Arg.SystemAddress, "<<<<<<<<<<<<<<<<<<<<<<")
-
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
 	wg.Add(3)
 	go app.WaitSignals(cancel, wg)
 
 	r := chi.NewRouter()
-	// b := handlers.NewArgs(r, wg, ctx)
 	s := &http.Server{
 		Handler: r,
 		Addr:    config.Arg.Address,
@@ -62,7 +60,7 @@ func main() {
 
 	s.Shutdown(ctx)
 
-	logrus.Info("Stop http server!")
+	logrus.Info("Http server stop!")
 	wg.Wait()
 
 }

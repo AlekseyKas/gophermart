@@ -27,7 +27,8 @@ func TestDatabase_InitDB(t *testing.T) {
 
 func TestDatabase_User(t *testing.T) {
 	type args struct {
-		u storage.User
+		u      storage.User
+		ipAddr string
 	}
 
 	tests := []struct {
@@ -37,22 +38,27 @@ func TestDatabase_User(t *testing.T) {
 	}{
 		{
 			name: "first",
-			args: args{storage.User{
+			args: args{u: storage.User{
 				Login:    "user",
 				Password: "password",
-			}},
+			},
+				ipAddr: "127.0.0.1",
+			},
 			want: storage.Cookie{
 				Name:   "gophermart",
 				Value:  "xxx",
 				MaxAge: 864000,
 			},
 		},
+
 		{
 			name: "second",
-			args: args{storage.User{
+			args: args{u: storage.User{
 				Login:    "user2",
 				Password: "password",
-			}},
+			},
+				ipAddr: "127.0.0.1",
+			},
 			want: storage.Cookie{
 				Name:   "gophermart",
 				Value:  "xxxxx",
@@ -69,16 +75,12 @@ func TestDatabase_User(t *testing.T) {
 	storage.IDB.InitDB(ctx, DBURL)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cookie, err := storage.DB.CreateUser(tt.args.u)
+			cookie, err := storage.DB.CreateUser(tt.args.u, tt.args.ipAddr)
 			require.NoError(t, err)
 			require.NotEmpty(t, cookie.Value)
 			require.NotEmpty(t, cookie.MaxAge)
 			require.NotEqual(t, cookie.MaxAge, tt.want.MaxAge)
 			require.Equal(t, cookie.Name, tt.want.Name)
-			// s, errg := storage.DB.GetUser(tt.args.u)
-			// require.NoError(t, errg)
-			// require.Equal(t, s, cookie.Value)
-
 		})
 	}
 }

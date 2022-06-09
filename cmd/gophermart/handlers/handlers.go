@@ -10,14 +10,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
-
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/neonxp/checksum"
 	"github.com/neonxp/checksum/luhn"
 	"github.com/sirupsen/logrus"
+
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
+	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
 )
 
 type B struct {
@@ -82,7 +82,7 @@ func register() http.HandlerFunc {
 			rw.WriteHeader(http.StatusBadRequest)
 		}
 		err409 := errors.New("ERROR: duplicate key value violates unique constraint \"users_login_key\" (SQLSTATE 23505)")
-		cookie, err := storage.DB.CreateUser(u)
+		cookie, err := storage.DB.CreateUser(u, strings.Split(req.RemoteAddr, ":")[0])
 		logrus.Info(cookie, err)
 		switch {
 		case err == nil:
@@ -123,7 +123,7 @@ func login() http.HandlerFunc {
 			logrus.Error("Wrong format of user or password.")
 			rw.WriteHeader(http.StatusBadRequest)
 		}
-		cookie, err := storage.DB.AuthUser(u)
+		cookie, err := storage.DB.AuthUser(u, strings.Split(req.RemoteAddr, ":")[0])
 		err1 := errors.New("invalid password")
 		err2 := errors.New("no rows in result set")
 		switch {
@@ -182,7 +182,6 @@ func loadOrder() http.HandlerFunc {
 			}
 			switch {
 			case err == nil:
-				logrus.Info("ORRRRRRRRRRRRRRRRRRRRRRRRRR: ", string(out), "uuuu: ", userID)
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
 				logrus.Error(err)
@@ -313,8 +312,6 @@ func getOrders() http.HandlerFunc {
 			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusNoContent)
 		} else {
-			logrus.Info("OOOOOOOOOOOOOOOOOOOOOOOO", orders)
-
 			var buf bytes.Buffer
 			encoder := json.NewEncoder(&buf)
 			err := encoder.Encode(orders)
@@ -353,7 +350,6 @@ func getBalance() http.HandlerFunc {
 		if err != nil {
 			http.Error(rw, err.Error(), http.StatusBadRequest)
 		}
-		logrus.Info("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", balance)
 		rw.Header().Add("Content-Type", "application/json")
 		rw.WriteHeader(http.StatusOK)
 		rw.Write(buf.Bytes())

@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/sirupsen/logrus"
+
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/database"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage/migrations"
 	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config/migrate"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/sirupsen/logrus"
 )
 
 type Withdraw struct {
@@ -64,14 +64,6 @@ type Balance struct {
 	Withdrawn float64 `json:"withdrawn"`
 }
 
-// type Order struct {
-// 	userID      int
-// 	number      string
-// 	status      string
-// 	accrual     float64
-// 	UploadedAt time.Time
-// }
-
 var DB Database
 var IDB Storage
 var Users User
@@ -80,11 +72,9 @@ var Withdraws Withdraw
 
 type Storage interface {
 	InitDB(ctx context.Context, DBURL string) error
-	CreateUser(u User) (cookie Cookie, err error)
+	CreateUser(u User, ipAddr string) (cookie Cookie, err error)
 	CheckCookie(c Cookie) (bool, error)
-	// GetUser(u User) (string, error)
-	AuthUser(u User) (Cookie, error)
-	// ReconnectDB() error
+	AuthUser(u User, ipAddr string) (Cookie, error)
 	LoadOrder(number string, c Cookie, userID int) error
 	UpdateOrder(order Order) error
 	GetOrders(userID int) (Ords []OrderOutput, err error)
@@ -165,7 +155,6 @@ func (d *Database) UpdateWithdraw(w Withdraw, userID int) (b bool, err error) {
 		return b, err
 	} else {
 		bal := balance - w.Sum
-		logrus.Info("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", w.Sum)
 		_, err = d.Con.Exec(d.Ctx, "UPDATE balance SET balance = $1 WHERE user_id = $2;", bal, userID)
 		if err != nil {
 			logrus.Error("Error update balance: ", err)
@@ -224,7 +213,7 @@ func (d *Database) CheckCookie(c Cookie) (bool, error) {
 	return false, err
 }
 
-func (d *Database) AuthUser(u User) (Cookie, error) {
+func (d *Database) AuthUser(u User, ipAddr string) (Cookie, error) {
 	var cookie Cookie
 	var login string
 	var password string
@@ -240,7 +229,7 @@ func (d *Database) AuthUser(u User) (Cookie, error) {
 		case nil:
 			return cookie, err
 		default:
-			valhashDB := hmac.New(sha256.New, []byte(login+password))
+			valhashDB := hmac.New(sha256.New, []byte(login+password+ipAddr))
 			cookieDB := fmt.Sprintf("%x", valhashDB.Sum(nil))
 			cookie := Cookie{
 				Name:    "gophermart",
@@ -290,9 +279,9 @@ loop:
 	return nil
 }
 
-func (d *Database) CreateUser(u User) (cookie Cookie, err error) {
+func (d *Database) CreateUser(u User, ipAddr string) (cookie Cookie, err error) {
 	hash, _ := app.HashPassword(u.Password)
-	valhash := hmac.New(sha256.New, []byte(u.Login+hash))
+	valhash := hmac.New(sha256.New, []byte(u.Login+hash+ipAddr))
 	hh := fmt.Sprintf("%x", valhash.Sum(nil))
 	switch d.Con {
 	case nil:

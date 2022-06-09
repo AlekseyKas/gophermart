@@ -6,10 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/config"
 	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
+
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
+	"github.com/AlekseyKas/gophermart/internal/config"
 )
 
 func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
@@ -41,7 +42,6 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 					resp, err := client.R().
 						SetHeader("Content-Type", "application/json").
 						Get(config.Arg.SystemAddress + "/api/orders/" + Ords[i].Order)
-					logrus.Info("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII: ", config.Arg.SystemAddress, " :::: ", string(resp.Body()), "::::::::::::::::: ", Ords[i].Order)
 					if err != nil {
 						logrus.Error(err)
 					}
@@ -50,7 +50,6 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 					if err != nil {
 						logrus.Error("Error unmarshal order from accrual: ", err)
 					}
-					logrus.Info("UIUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU:", Ords[i].Status, "NNNNNNNNNNNNNNN", order)
 					//update status &accrual
 					if Ords[i].Status != order.Status {
 						_, err = storage.DB.Con.Exec(storage.DB.Ctx, "UPDATE orders SET status = $1, accrual = $2  WHERE number = $3;", order.Status, order.Accrual, order.Order)
