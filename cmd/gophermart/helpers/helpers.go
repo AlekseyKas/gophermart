@@ -40,7 +40,8 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 					client := resty.New()
 					resp, err := client.R().
 						SetHeader("Content-Type", "application/json").
-						Get(config.Arg.SystemAddress + "/api/orders/" + Ords[i].Order)
+						Get("http://" + config.Arg.SystemAddress + "/api/orders/" + Ords[i].Order)
+					logrus.Info("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII: ", config.Arg.SystemAddress, " :::: ", string(resp.Body()))
 					if err != nil {
 						logrus.Error(err)
 					}
