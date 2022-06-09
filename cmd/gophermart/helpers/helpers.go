@@ -14,7 +14,6 @@ import (
 )
 
 func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -82,49 +81,4 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 			}
 		}
 	}
-
-	//for test
-	// client := resty.New()
-	// _, err := client.R().
-	// 	SetHeader("Content-Type", "application/json").
-	// 	SetBody(number).
-	// 	Post("http://" + config.Arg.SystemAddress + "/api/orders")
-	// if err != nil {
-	// 	logrus.Error(err)
-	// }
-	// //for test
-	// // client = resty.New()
-	// var status string
-	// for {
-	// 	select {
-	// 	case <-ctx.Done():
-	// 		logrus.Info("Check status down")
-	// 		defer wg.Done()
-	// 		return
-	// 	case <-time.After(time.Second * 2):
-	// 		defer wg.Done()
-	// 		resp, err := client.R().
-	// 			SetHeader("Content-Type", "application/json").
-	// 			Get("http://" + config.Arg.SystemAddress + "/api/orders/" + string(number))
-	// 		if err != nil {
-	// 			logrus.Error(err)
-	// 		}
-	// 		order := storage.Orders
-	// 		err = json.Unmarshal(resp.Body(), &order)
-	// 		if err != nil {
-	// 			logrus.Error("Error unmarshal order from accrual: ", err)
-	// 		}
-	// 		logrus.Info("sssssssssssssssssssssssss: ", order)
-	// 		if order.Status != status {
-	// 			err = storage.DB.UpdateOrder(order)
-	// 			if err != nil {
-	// 				logrus.Error("Error update order in DB: ", err)
-	// 			}
-	// 			status = order.Status
-	// 			if status == "INVALID" || status == "PROCESSED" {
-	// 				return
-	// 			}
-	// 		}
-	// 	}
-	// }
 }

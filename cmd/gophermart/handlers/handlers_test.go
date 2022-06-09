@@ -107,7 +107,6 @@ func Test_register(t *testing.T) {
 			req, err := http.NewRequest(tt.method, ts.URL+tt.url, buff)
 			req.Header.Set("Content-Type", tt.contentType)
 			require.NoError(t, err)
-			logrus.Info("ppppppppppppppppppppp:  ", req)
 			resp, err := http.DefaultClient.Do(req)
 			require.Equal(t, tt.want.statusCode, resp.StatusCode)
 
