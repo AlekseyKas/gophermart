@@ -20,7 +20,7 @@ func ControlStatus(wg *sync.WaitGroup, ctx context.Context) {
 			defer wg.Done()
 			logrus.Info("Stop checking status")
 			return
-		case <-time.After(time.Second * 2):
+		case <-time.After(time.Second * 1):
 			var order storage.Order
 			var Ords []storage.Order
 			rows, err := storage.DB.Con.Query(storage.DB.Ctx, "SELECT * FROM orders WHERE status = $1 OR status = $2 OR status = $3", "NEW", "PROCESSING", "REGISTERED")
