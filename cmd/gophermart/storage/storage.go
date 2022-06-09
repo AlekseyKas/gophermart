@@ -72,9 +72,9 @@ var Withdraws Withdraw
 
 type Storage interface {
 	InitDB(ctx context.Context, DBURL string) error
-	CreateUser(u User, ipAddr string) (cookie Cookie, err error)
+	CreateUser(u User, IPAddr string) (cookie Cookie, err error)
 	CheckCookie(c Cookie) (bool, error)
-	AuthUser(u User, ipAddr string) (Cookie, error)
+	AuthUser(u User, IPAddr string) (Cookie, error)
 	LoadOrder(number string, c Cookie, userID int) error
 	UpdateOrder(order Order) error
 	GetOrders(userID int) (Ords []OrderOutput, err error)
@@ -213,7 +213,7 @@ func (d *Database) CheckCookie(c Cookie) (bool, error) {
 	return false, err
 }
 
-func (d *Database) AuthUser(u User, ipAddr string) (Cookie, error) {
+func (d *Database) AuthUser(u User, IPAddr string) (Cookie, error) {
 	var cookie Cookie
 	var login string
 	var password string
@@ -229,7 +229,7 @@ func (d *Database) AuthUser(u User, ipAddr string) (Cookie, error) {
 		case nil:
 			return cookie, err
 		default:
-			valhashDB := hmac.New(sha256.New, []byte(login+password+ipAddr))
+			valhashDB := hmac.New(sha256.New, []byte(login+password+IPAddr))
 			cookieDB := fmt.Sprintf("%x", valhashDB.Sum(nil))
 			cookie := Cookie{
 				Name:    "gophermart",
@@ -279,9 +279,9 @@ loop:
 	return nil
 }
 
-func (d *Database) CreateUser(u User, ipAddr string) (cookie Cookie, err error) {
+func (d *Database) CreateUser(u User, IPAddr string) (cookie Cookie, err error) {
 	hash, _ := app.HashPassword(u.Password)
-	valhash := hmac.New(sha256.New, []byte(u.Login+hash+ipAddr))
+	valhash := hmac.New(sha256.New, []byte(u.Login+hash+IPAddr))
 	hh := fmt.Sprintf("%x", valhash.Sum(nil))
 	switch d.Con {
 	case nil:

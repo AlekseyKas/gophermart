@@ -129,7 +129,7 @@ func Test_login(t *testing.T) {
 		Login:    "user1",
 		Password: "password",
 	}
-	IpAddr := "127.0.0.1"
+	IPAddr := "127.0.0.1"
 
 	type want struct {
 		contentType string
@@ -192,7 +192,7 @@ func Test_login(t *testing.T) {
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, DBURL)
 	logrus.Info(DBURL)
-	storage.DB.CreateUser(User, IpAddr)
+	storage.DB.CreateUser(User, IPAddr)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -246,7 +246,7 @@ func Test_loadOrder(t *testing.T) {
 		Login:    "user3",
 		Password: "password",
 	}
-	IpAddr := "127.0.0.1"
+	IPAddr := "127.0.0.1"
 
 	type want struct {
 		contentType string
@@ -378,9 +378,9 @@ func Test_loadOrder(t *testing.T) {
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, DBURL)
 	//first user
-	cookie, _ := storage.DB.CreateUser(User, IpAddr)
-	cookie2, _ := storage.DB.CreateUser(User2, IpAddr)
-	cookie3, _ := storage.DB.CreateUser(User3, IpAddr)
+	cookie, _ := storage.DB.CreateUser(User, IPAddr)
+	cookie2, _ := storage.DB.CreateUser(User2, IPAddr)
+	cookie3, _ := storage.DB.CreateUser(User3, IPAddr)
 
 	testaccrualrequests(t, "http://0.0.0.0:8090")
 
