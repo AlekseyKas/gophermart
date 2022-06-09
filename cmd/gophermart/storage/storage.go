@@ -87,10 +87,10 @@ type Storage interface {
 	// ReconnectDB() error
 	LoadOrder(number string, c Cookie, userID int) error
 	UpdateOrder(order Order) error
-	GetOrders() (Ords []OrderOutput, err error)
+	GetOrders(userID int) (Ords []OrderOutput, err error)
 	UpdateWithdraw(w Withdraw, userID int) (b bool, err error)
 	CheckUser(c Cookie) (userID int, err error)
-	Getwithdraws() (withdr []Withdraw, err error)
+	Getwithdraws(userID int) (withdr []Withdraw, err error)
 	GetBalance(userID int) (balance Balance, err error)
 }
 
@@ -119,9 +119,9 @@ func (d *Database) GetBalance(userID int) (balance Balance, err error) {
 	return balance, err
 }
 
-func (d *Database) Getwithdraws() (withdr []Withdraw, err error) {
+func (d *Database) Getwithdraws(userID int) (withdr []Withdraw, err error) {
 	var w Withdraw
-	rows, err := d.Con.Query(d.Ctx, "SELECT ordername, withdraws, processed_at FROM withdraws order by processed_at")
+	rows, err := d.Con.Query(d.Ctx, "SELECT ordername, withdraws, processed_at FROM withdraws WHERE user_id = $1 order by processed_at", userID)
 	if err != nil {
 		logrus.Error("Error select orders: ", err)
 	}
@@ -176,9 +176,9 @@ func (d *Database) UpdateWithdraw(w Withdraw, userID int) (b bool, err error) {
 	return b, err
 }
 
-func (d *Database) GetOrders() (Ords []OrderOutput, err error) {
+func (d *Database) GetOrders(userID int) (Ords []OrderOutput, err error) {
 	var order OrderOutput
-	rows, err := d.Con.Query(d.Ctx, "SELECT number, status, accrual, uploaded_at FROM orders order by uploaded_at")
+	rows, err := d.Con.Query(d.Ctx, "SELECT number, status, accrual, uploaded_at FROM orders WHERE user_id = $1 order by uploaded_at", userID)
 	if err != nil {
 		logrus.Error("Error select orders: ", err)
 	}

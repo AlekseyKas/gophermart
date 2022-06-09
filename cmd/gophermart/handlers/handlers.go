@@ -256,7 +256,21 @@ func withdrawOrder() http.HandlerFunc {
 
 func getWithdraws() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		withdraws, err := storage.DB.Getwithdraws()
+		var c storage.Cookie
+		for _, cook := range req.Cookies() {
+			if cook.Name == "gophermart" {
+				c = storage.Cookie{
+					Name:  cook.Name,
+					Value: cook.Value,
+				}
+			}
+		}
+		userID, err := storage.DB.CheckUser(c)
+		if err != nil {
+			logrus.Error("Faild check user: ", err)
+		}
+
+		withdraws, err := storage.DB.Getwithdraws(userID)
 		if err != nil {
 			logrus.Error("Error get withdraws: ", err)
 		}
@@ -277,7 +291,21 @@ func getWithdraws() http.HandlerFunc {
 }
 func getOrders() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		orders, err := storage.DB.GetOrders()
+		var c storage.Cookie
+		for _, cook := range req.Cookies() {
+			if cook.Name == "gophermart" {
+				c = storage.Cookie{
+					Name:  cook.Name,
+					Value: cook.Value,
+				}
+			}
+		}
+		userID, err := storage.DB.CheckUser(c)
+		if err != nil {
+			logrus.Error("Faild check user: ", err)
+		}
+
+		orders, err := storage.DB.GetOrders(userID)
 		if err != nil {
 			logrus.Error(err)
 		}
