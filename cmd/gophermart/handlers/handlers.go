@@ -166,8 +166,10 @@ func loadOrder() http.HandlerFunc {
 		err = luhn.Check(string(out))
 		switch err {
 		case checksum.ErrInvalidNumber:
+			logrus.Info("Error format order: ", string(out))
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case checksum.ErrInvalidChecksum:
+			logrus.Info("Error format order: ", string(out))
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case nil:
 			userID, err := storage.DB.CheckUser(c)
@@ -226,8 +228,10 @@ func withdrawOrder() http.HandlerFunc {
 		err = luhn.Check(w.Order)
 		switch err {
 		case checksum.ErrInvalidNumber:
+			logrus.Info("Withdraw format order wrong: ", w.Order)
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case checksum.ErrInvalidChecksum:
+			logrus.Info("Withdraw format order wrong: ", w.Order)
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case nil:
 			userID, err := storage.DB.CheckUser(c)
