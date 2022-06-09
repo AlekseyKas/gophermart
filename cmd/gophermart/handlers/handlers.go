@@ -10,14 +10,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
-
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/neonxp/checksum"
 	"github.com/neonxp/checksum/luhn"
 	"github.com/sirupsen/logrus"
+
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
+	"github.com/AlekseyKas/gophermart/internal/middlewarecustom"
 )
 
 type B struct {
@@ -36,6 +36,8 @@ func Router(r chi.Router) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middlewarecustom.CheckCookie)
+	r.Use(middlewarecustom.CompressGzip)
+	r.Use(middlewarecustom.DecompressGzip)
 
 	//регистрация пользователя
 	r.Post("/api/user/register", register())
@@ -80,7 +82,7 @@ func register() http.HandlerFunc {
 			rw.WriteHeader(http.StatusBadRequest)
 		}
 		err409 := errors.New("ERROR: duplicate key value violates unique constraint \"users_login_key\" (SQLSTATE 23505)")
-		cookie, err := storage.DB.CreateUser(u)
+		cookie, err := storage.DB.CreateUser(u, strings.Split(req.RemoteAddr, ":")[0])
 		logrus.Info(cookie, err)
 		switch {
 		case err == nil:
@@ -121,7 +123,7 @@ func login() http.HandlerFunc {
 			logrus.Error("Wrong format of user or password.")
 			rw.WriteHeader(http.StatusBadRequest)
 		}
-		cookie, err := storage.DB.AuthUser(u)
+		cookie, err := storage.DB.AuthUser(u, strings.Split(req.RemoteAddr, ":")[0])
 		err1 := errors.New("invalid password")
 		err2 := errors.New("no rows in result set")
 		switch {
@@ -164,8 +166,10 @@ func loadOrder() http.HandlerFunc {
 		err = luhn.Check(string(out))
 		switch err {
 		case checksum.ErrInvalidNumber:
+			logrus.Info("Error format order: ", string(out))
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case checksum.ErrInvalidChecksum:
+			logrus.Info("Error format order: ", string(out))
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case nil:
 			userID, err := storage.DB.CheckUser(c)
@@ -180,8 +184,6 @@ func loadOrder() http.HandlerFunc {
 			case err == nil:
 				logrus.Info("Order regitred")
 				rw.WriteHeader(http.StatusAccepted)
-				// args.wg.Add(1)
-				// go sendAccural(args.wg, args.ctx, out)
 				logrus.Error(err)
 			case strings.Contains(err.Error(), "orders_number_key"):
 				logrus.Error("Order already exist and add other user")
@@ -191,7 +193,6 @@ func loadOrder() http.HandlerFunc {
 			default:
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
-			// rw.WriteHeader(http.StatusOK)
 		}
 	}
 }
@@ -226,8 +227,10 @@ func withdrawOrder() http.HandlerFunc {
 		err = luhn.Check(w.Order)
 		switch err {
 		case checksum.ErrInvalidNumber:
+			logrus.Info("Withdraw format order wrong: ", w.Order)
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case checksum.ErrInvalidChecksum:
+			logrus.Info("Withdraw format order wrong: ", w.Order)
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 		case nil:
 			userID, err := storage.DB.CheckUser(c)
@@ -240,11 +243,9 @@ func withdrawOrder() http.HandlerFunc {
 			}
 			switch {
 			case b:
-				logrus.Info("777777777777777777777777", b)
 				rw.Header().Add("Content-Type", "application.json")
 				rw.WriteHeader(http.StatusOK)
 			case !b:
-				logrus.Info("888888888888888888888888", b)
 				rw.Header().Add("Content-Type", "application.json")
 				rw.WriteHeader(http.StatusPaymentRequired)
 			}
@@ -254,7 +255,21 @@ func withdrawOrder() http.HandlerFunc {
 
 func getWithdraws() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		withdraws, err := storage.DB.Getwithdraws()
+		var c storage.Cookie
+		for _, cook := range req.Cookies() {
+			if cook.Name == "gophermart" {
+				c = storage.Cookie{
+					Name:  cook.Name,
+					Value: cook.Value,
+				}
+			}
+		}
+		userID, err := storage.DB.CheckUser(c)
+		if err != nil {
+			logrus.Error("Faild check user: ", err)
+		}
+
+		withdraws, err := storage.DB.Getwithdraws(userID)
 		if err != nil {
 			logrus.Error("Error get withdraws: ", err)
 		}
@@ -262,36 +277,49 @@ func getWithdraws() http.HandlerFunc {
 		if len(withdraws) == 0 {
 			rw.WriteHeader(http.StatusNoContent)
 		} else {
-			rw.WriteHeader(http.StatusOK)
-
 			var buf bytes.Buffer
 			encoder := json.NewEncoder(&buf)
 			err := encoder.Encode(withdraws)
 			if err != nil {
 				http.Error(rw, err.Error(), http.StatusBadRequest)
 			}
+			rw.WriteHeader(http.StatusOK)
 			rw.Write(buf.Bytes())
 		}
 	}
 }
 func getOrders() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		orders, err := storage.DB.GetOrders()
+		var c storage.Cookie
+		for _, cook := range req.Cookies() {
+			if cook.Name == "gophermart" {
+				c = storage.Cookie{
+					Name:  cook.Name,
+					Value: cook.Value,
+				}
+			}
+		}
+		userID, err := storage.DB.CheckUser(c)
+		if err != nil {
+			logrus.Error("Faild check user: ", err)
+		}
+
+		orders, err := storage.DB.GetOrders(userID)
 		if err != nil {
 			logrus.Error(err)
 		}
-		rw.Header().Add("Content-Type", "application/json")
 		if len(orders) == 0 {
+			rw.Header().Add("Content-Type", "application/json")
 			rw.WriteHeader(http.StatusNoContent)
 		} else {
-			rw.WriteHeader(http.StatusOK)
-
 			var buf bytes.Buffer
 			encoder := json.NewEncoder(&buf)
 			err := encoder.Encode(orders)
 			if err != nil {
 				http.Error(rw, err.Error(), http.StatusBadRequest)
 			}
+			rw.Header().Add("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusOK)
 			rw.Write(buf.Bytes())
 		}
 	}
@@ -299,6 +327,31 @@ func getOrders() http.HandlerFunc {
 
 func getBalance() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
-		logrus.Info("balance")
+		var c storage.Cookie
+		for _, cook := range req.Cookies() {
+			if cook.Name == "gophermart" {
+				c = storage.Cookie{
+					Name:  cook.Name,
+					Value: cook.Value,
+				}
+			}
+		}
+		userID, err := storage.DB.CheckUser(c)
+		if err != nil {
+			logrus.Error("Error check userID: ", err)
+		}
+		balance, err := storage.DB.GetBalance(userID)
+		if err != nil {
+			logrus.Error("Error check userID: ", err)
+		}
+		var buf bytes.Buffer
+		encoder := json.NewEncoder(&buf)
+		err = encoder.Encode(balance)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+		}
+		rw.Header().Add("Content-Type", "application/json")
+		rw.WriteHeader(http.StatusOK)
+		rw.Write(buf.Bytes())
 	}
 }

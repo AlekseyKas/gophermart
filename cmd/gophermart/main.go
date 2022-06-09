@@ -4,32 +4,45 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
+
+	lokihook "github.com/akkuman/logrus-loki-hook"
+	"github.com/go-chi/chi/v5"
+	"github.com/sirupsen/logrus"
 
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/helpers"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
 	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config"
-	"github.com/go-chi/chi/v5"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	lokiHookConfig := &lokihook.Config{
+		URL: "https://logsremoteloki:efnd9DG510YnZQUjMlgMYVIN@loki.duduh.ru/api/prom/push",
+		Labels: map[string]string{
+			"app": "lexa-gophermart",
+		},
+	}
+	hook, err := lokihook.NewHook(lokiHookConfig)
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		logrus.AddHook(hook)
+	}
+
 	wg := &sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
-	err := config.TerminateFlags()
+	err = config.TerminateFlags()
 	if err != nil {
 		logrus.Error("Error setting args: ", err)
 	}
-	// logrus.Info(">>>>>>>>>>>>>", config.Arg.Address, "<<<<<<<<<<<<<<<<<<<<<<")
-
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, config.Arg.DatabaseURL)
 	wg.Add(3)
 	go app.WaitSignals(cancel, wg)
 
 	r := chi.NewRouter()
-	// b := handlers.NewArgs(r, wg, ctx)
 	s := &http.Server{
 		Handler: r,
 		Addr:    config.Arg.Address,
@@ -45,10 +58,10 @@ func main() {
 		}
 	}(wg)
 	<-ctx.Done()
-
-	s.Shutdown(ctx)
-
-	logrus.Info("Stop http server!")
+	ctxx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	s.Shutdown(ctxx)
+	logrus.Info("Http server stop!")
 	wg.Wait()
 
 }

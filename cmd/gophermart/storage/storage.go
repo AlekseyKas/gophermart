@@ -8,19 +8,19 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/sirupsen/logrus"
+
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/database"
 	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage/migrations"
 	"github.com/AlekseyKas/gophermart/internal/app"
 	"github.com/AlekseyKas/gophermart/internal/config/migrate"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/sirupsen/logrus"
 )
 
 type Withdraw struct {
 	Order       string    `json:"order,omitempty"`
 	Sum         float64   `json:"sum,omitempty"`
-	ProcessedAt time.Time `json:"processedAt,omitempty"`
+	ProcessedAt time.Time `json:"processed_at,omitempty"`
 }
 
 type Order struct {
@@ -32,10 +32,10 @@ type Order struct {
 	UploadedAt time.Time `json:"UploadedAt,omitempty"`
 }
 type OrderOutput struct {
-	Order      string    `json:"order,omitempty"`
+	Order      string    `json:"number,omitempty"`
 	Status     string    `json:"status,omitempty"`
 	Accrual    float64   `json:"accrual,omitempty"`
-	UploadedAt time.Time `json:"UploadedAt,omitempty"`
+	UploadedAt time.Time `json:"uploaded_at,omitempty"`
 }
 
 type Cookie struct {
@@ -59,13 +59,10 @@ type Database struct {
 	Ctx   context.Context
 }
 
-// type Order struct {
-// 	userID      int
-// 	number      string
-// 	status      string
-// 	accrual     float64
-// 	UploadedAt time.Time
-// }
+type Balance struct {
+	Current   float64 `json:"current"`
+	Withdrawn float64 `json:"withdrawn"`
+}
 
 var DB Database
 var IDB Storage
@@ -75,31 +72,46 @@ var Withdraws Withdraw
 
 type Storage interface {
 	InitDB(ctx context.Context, DBURL string) error
-	CreateUser(u User) (cookie Cookie, err error)
+	CreateUser(u User, IPAddr string) (cookie Cookie, err error)
 	CheckCookie(c Cookie) (bool, error)
-	// GetUser(u User) (string, error)
-	AuthUser(u User) (Cookie, error)
-	// ReconnectDB() error
+	AuthUser(u User, IPAddr string) (Cookie, error)
 	LoadOrder(number string, c Cookie, userID int) error
 	UpdateOrder(order Order) error
-	GetOrders() (Ords []OrderOutput, err error)
+	GetOrders(userID int) (Ords []OrderOutput, err error)
 	UpdateWithdraw(w Withdraw, userID int) (b bool, err error)
 	CheckUser(c Cookie) (userID int, err error)
-	Getwithdraws() (withdr []Withdraw, err error)
+	Getwithdraws(userID int) (withdr []Withdraw, err error)
+	GetBalance(userID int) (balance Balance, err error)
 }
 
-// CREATE TABLE withdraws (
-//   withdraw_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-//   user_id INT,
-//   ordername VARCHAR (50) UNIQUE NOT NULL,
-//     DOUBLE PRECISION,
-//   processed_at TIMESTAMPTZ,
-//   CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-// )
+func (d *Database) GetBalance(userID int) (balance Balance, err error) {
+	var withdraw float64
+	var withdraws float64
 
-func (d *Database) Getwithdraws() (withdr []Withdraw, err error) {
+	row := d.Con.QueryRow(d.Ctx, "SELECT balance FROM balance")
+	err = row.Scan(&balance.Current)
+	if err != nil {
+		d.Loger.Error("Error scan row get user by cookie: ", err)
+		return balance, err
+	}
+	rows, err := d.Con.Query(d.Ctx, "SELECT withdraws FROM withdraws WHERE user_id = $1", userID)
+	if err != nil {
+		logrus.Error("Error select orders: ", err)
+	}
+	for rows.Next() {
+		err = rows.Scan(&withdraw)
+		if err != nil {
+			logrus.Error("Error scan orders: ", err)
+		}
+		withdraws += withdraw
+	}
+	balance.Withdrawn = withdraws
+	return balance, err
+}
+
+func (d *Database) Getwithdraws(userID int) (withdr []Withdraw, err error) {
 	var w Withdraw
-	rows, err := d.Con.Query(d.Ctx, "SELECT ordername, withdraws, processed_at FROM withdraws order by processed_at")
+	rows, err := d.Con.Query(d.Ctx, "SELECT ordername, withdraws, processed_at FROM withdraws WHERE user_id = $1 order by processed_at", userID)
 	if err != nil {
 		logrus.Error("Error select orders: ", err)
 	}
@@ -108,7 +120,6 @@ func (d *Database) Getwithdraws() (withdr []Withdraw, err error) {
 		if err != nil {
 			logrus.Error("Error scan orders: ", err)
 		}
-		logrus.Info("ppppppppklllllllllllllll", w.Order)
 		withdr = append(withdr, w)
 	}
 	return withdr, err
@@ -140,12 +151,11 @@ func (d *Database) UpdateWithdraw(w Withdraw, userID int) (b bool, err error) {
 			logrus.Error("Error scan orders: ", err)
 		}
 	}
-	logrus.Info("555555555555555555555555555: ", balance, w.Sum)
 	if balance < w.Sum {
 		return b, err
 	} else {
 		bal := balance - w.Sum
-		_, err = d.Con.Exec(d.Ctx, "INSERT INTO balance (user_id, balance) VALUES($1,$2) ON CONFLICT (user_id) DO UPDATE SET balance = $2", userID, bal)
+		_, err = d.Con.Exec(d.Ctx, "UPDATE balance SET balance = $1 WHERE user_id = $2;", bal, userID)
 		if err != nil {
 			logrus.Error("Error update balance: ", err)
 		}
@@ -155,21 +165,9 @@ func (d *Database) UpdateWithdraw(w Withdraw, userID int) (b bool, err error) {
 	return b, err
 }
 
-func (d *Database) GetOrders() (Ords []OrderOutput, err error) {
+func (d *Database) GetOrders(userID int) (Ords []OrderOutput, err error) {
 	var order OrderOutput
-	// var userID int
-	// var orderID int
-	// CREATE TABLE orders (
-	// 	order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	// 	user_id INT,
-	// 	UNIQUE (user_id, number),
-	// 	number VARCHAR (50) UNIQUE NOT NULL,
-	// 	status VARCHAR (50) NOT NULL DEFAULT 'NEW',
-	// 	accrual DOUBLE PRECISION DEFAULT 0,
-	// 	uploaded_at TIMESTAMPTZ,
-	// 	CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-	// );
-	rows, err := d.Con.Query(d.Ctx, "SELECT number, status, accrual, uploaded_at FROM orders order by uploaded_at")
+	rows, err := d.Con.Query(d.Ctx, "SELECT number, status, accrual, uploaded_at FROM orders WHERE user_id = $1 order by uploaded_at", userID)
 	if err != nil {
 		logrus.Error("Error select orders: ", err)
 	}
@@ -192,16 +190,6 @@ func (d *Database) UpdateOrder(order Order) error {
 }
 
 func (d *Database) LoadOrder(number string, c Cookie, userID int) error {
-	// CREATE TABLE orders (
-	// 	order_id INT NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	// 	user_id INT,
-	// 	UNIQUE (user_id, number),
-	// 	number VARCHAR (50) UNIQUE NOT NULL,
-	// 	status VARCHAR (50) NOT NULL DEFAULT 'NEW',
-	// 	accrual DOUBLE PRECISION DEFAULT 0,
-	// 	uploaded_at TIMESTAMPTZ,
-	// 	CONSTRAINT fk_users FOREIGN KEY(user_id) REFERENCES users(user_id)
-	// );
 	_, err := d.Con.Exec(d.Ctx, "INSERT INTO orders (user_id, number, uploaded_at) VALUES($1,$2, $3)", userID, number, time.Now())
 	return err
 }
@@ -219,15 +207,13 @@ func (d *Database) CheckCookie(c Cookie) (bool, error) {
 		d.Loger.Error("Error scan row: ", err)
 		return false, err
 	}
-	logrus.Info("iIIIIIIIIIIIIIIIIIIIII", cookie)
 	if cookie.Expires.After(time.Now()) {
-		logrus.Info("iIIIIIIIIIIIIIIIIIIIIIaaaaaaaaaaaaaaaaa", cookie.Expires, time.Now())
 		return true, err
 	}
 	return false, err
 }
 
-func (d *Database) AuthUser(u User) (Cookie, error) {
+func (d *Database) AuthUser(u User, IPAddr string) (Cookie, error) {
 	var cookie Cookie
 	var login string
 	var password string
@@ -243,7 +229,7 @@ func (d *Database) AuthUser(u User) (Cookie, error) {
 		case nil:
 			return cookie, err
 		default:
-			valhashDB := hmac.New(sha256.New, []byte(login+password))
+			valhashDB := hmac.New(sha256.New, []byte(login+password+IPAddr))
 			cookieDB := fmt.Sprintf("%x", valhashDB.Sum(nil))
 			cookie := Cookie{
 				Name:    "gophermart",
@@ -265,21 +251,6 @@ func (d *Database) AuthUser(u User) (Cookie, error) {
 	}
 	return cookie, err
 }
-
-// func (d *Database) GetUser(u User) (string, error) {
-// 	var login string
-// 	var password string
-// 	var cookie Cookie
-// 	row := d.Con.QueryRow(d.Ctx, "SELECT * FROM users WHERE login = $1", u.Login)
-// 	err := row.Scan(&login, &password, &cookie)
-// 	if err != nil {
-// 		d.Loger.Error("Error scan row: ", err)
-// 	}
-// 	logrus.Info(")))))))))))))))))))", cookie.Expires.After(time.Now()))
-// 	valhash := hmac.New(sha256.New, []byte(login+password))
-// 	hh := fmt.Sprintf("%x", valhash.Sum(nil))
-// 	return hh, nil
-// }
 
 func (d *Database) InitDB(ctx context.Context, DBURL string) error {
 	DB.Ctx = ctx
@@ -308,9 +279,9 @@ loop:
 	return nil
 }
 
-func (d *Database) CreateUser(u User) (cookie Cookie, err error) {
+func (d *Database) CreateUser(u User, IPAddr string) (cookie Cookie, err error) {
 	hash, _ := app.HashPassword(u.Password)
-	valhash := hmac.New(sha256.New, []byte(u.Login+hash))
+	valhash := hmac.New(sha256.New, []byte(u.Login+hash+IPAddr))
 	hh := fmt.Sprintf("%x", valhash.Sum(nil))
 	switch d.Con {
 	case nil:
@@ -327,24 +298,14 @@ func (d *Database) CreateUser(u User) (cookie Cookie, err error) {
 			d.Loger.Error("Error create user: ", err)
 			return cookie, err
 		}
+		var userID int
+
+		row := d.Con.QueryRow(d.Ctx, "SELECT user_id FROM users WHERE cookie->>'Value' = $1", cookie.Value)
+		err = row.Scan(&userID)
+		if err != nil {
+			d.Loger.Error("Error scan row get user by cookie: ", err)
+		}
+		_, err = d.Con.Exec(d.Ctx, "INSERT INTO balance (user_id, balance) VALUES($1,$2)", userID, 0)
 		return cookie, err
 	}
 }
-
-// func (d *Database) ReconnectDB() error {
-// 	var err error
-// 	for i := 0; i < 5; i++ {
-// 		select {
-// 		case <-d.Ctx.Done():
-// 			return nil
-// 		case <-time.After(2 * time.Second):
-// 			DB.Con, err = database.Connect(d.Ctx, d.DBURL, d.Loger)
-// 			if err != nil {
-// 				d.Loger.Error("Error conncet to DB: ", err)
-// 			} else {
-// 				return nil
-// 			}
-// 		}
-// 	}
-// 	return err
-// }

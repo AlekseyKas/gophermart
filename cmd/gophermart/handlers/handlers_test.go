@@ -8,14 +8,15 @@ import (
 	"os"
 	"os/exec"
 	"testing"
-
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
-	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
-	"github.com/AlekseyKas/gophermart/internal/helpers"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/handlers"
+	"github.com/AlekseyKas/gophermart/cmd/gophermart/storage"
+	"github.com/AlekseyKas/gophermart/internal/helpers"
 )
 
 // Возможные коды ответа:
@@ -106,7 +107,6 @@ func Test_register(t *testing.T) {
 			req, err := http.NewRequest(tt.method, ts.URL+tt.url, buff)
 			req.Header.Set("Content-Type", tt.contentType)
 			require.NoError(t, err)
-			logrus.Info("ppppppppppppppppppppp:  ", req)
 			resp, err := http.DefaultClient.Do(req)
 			require.Equal(t, tt.want.statusCode, resp.StatusCode)
 
@@ -128,6 +128,7 @@ func Test_login(t *testing.T) {
 		Login:    "user1",
 		Password: "password",
 	}
+	IPAddr := "127.0.0.1"
 
 	type want struct {
 		contentType string
@@ -190,7 +191,7 @@ func Test_login(t *testing.T) {
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, DBURL)
 	logrus.Info(DBURL)
-	storage.DB.CreateUser(User)
+	storage.DB.CreateUser(User, IPAddr)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -207,6 +208,7 @@ func Test_login(t *testing.T) {
 		})
 	}
 	helpers.StopDB(id)
+	time.Sleep(time.Second * 2)
 	body := []byte(`{"login": "user1", "password": "password"}`)
 	buff := bytes.NewBuffer(body)
 	req, err := http.NewRequest("POST", ts.URL+"/api/user/login", buff)
@@ -243,6 +245,7 @@ func Test_loadOrder(t *testing.T) {
 		Login:    "user3",
 		Password: "password",
 	}
+	IPAddr := "127.0.0.1"
 
 	type want struct {
 		contentType string
@@ -307,17 +310,48 @@ func Test_loadOrder(t *testing.T) {
 			url:         "/api/user/orders",
 			contentType: "application/json",
 			want: want{
-				contentType: "text/plain",
+				contentType: "application/json",
 				statusCode:  400,
 			},
 		},
 		{
-			name:        "wrong format req",
+			name:        "###get orders",
 			method:      "GET",
 			url:         "/api/user/orders",
 			contentType: "application/json",
 			want: want{
-				contentType: "text/plain",
+				contentType: "application/json",
+				statusCode:  200,
+			},
+		},
+		{
+			name:        "###wrong balance",
+			method:      "GET",
+			url:         "/api/user/balance",
+			contentType: "application/json",
+			want: want{
+				contentType: "application/json",
+				statusCode:  200,
+			},
+		},
+		{
+			name:        "###get withdraw",
+			method:      "GET",
+			url:         "/api/user/balance/withdrawals",
+			contentType: "application/json",
+			want: want{
+				contentType: "application/json",
+				statusCode:  204,
+			},
+		},
+		{
+			name:        "###get withdraw",
+			method:      "POST",
+			body:        []byte(`"{order: "2377225624", "sum": 121}`),
+			url:         "/api/user/balance/withdraw",
+			contentType: "application/json",
+			want: want{
+				contentType: "application/json",
 				statusCode:  200,
 			},
 		},
@@ -334,16 +368,18 @@ func Test_loadOrder(t *testing.T) {
 	require.NoError(t, err)
 	defer func(p *os.Process) {
 		err := p.Kill()
+		time.Sleep(time.Second * 7)
 		require.NoError(t, err)
 	}(cmd.Process)
+
 	DBURL, id, _ := helpers.StartDB()
 
 	storage.IDB = &storage.DB
 	storage.IDB.InitDB(ctx, DBURL)
 	//first user
-	cookie, _ := storage.DB.CreateUser(User)
-	cookie2, _ := storage.DB.CreateUser(User2)
-	cookie3, _ := storage.DB.CreateUser(User3)
+	cookie, _ := storage.DB.CreateUser(User, IPAddr)
+	cookie2, _ := storage.DB.CreateUser(User2, IPAddr)
+	cookie3, _ := storage.DB.CreateUser(User3, IPAddr)
 
 	testaccrualrequests(t, "http://0.0.0.0:8090")
 
@@ -362,7 +398,6 @@ func Test_loadOrder(t *testing.T) {
 			require.NoError(t, err)
 			resp, err := http.DefaultClient.Do(req)
 			require.Equal(t, tt.want.statusCode, resp.StatusCode)
-
 			require.NoError(t, err)
 			defer resp.Body.Close()
 		})
@@ -397,6 +432,7 @@ func Test_loadOrder(t *testing.T) {
 	defer res.Body.Close()
 	//stop DB
 	helpers.StopDB(id)
+	time.Sleep(time.Second * 2)
 
 	//after stop DB 500
 	body = []byte("12345678903")
